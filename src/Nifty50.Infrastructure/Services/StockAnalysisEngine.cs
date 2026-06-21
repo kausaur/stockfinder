@@ -24,12 +24,14 @@ public class StockAnalysisEngine : IStockAnalysisEngine
         var sent = await _repo.GetLatestSentimentAsync(stockId);
         var stock = await _repo.GetByIdAsync(stockId);
 
-        // Get current price for Bollinger Band scoring
+        // Get current price and 52-week data for scoring
         decimal? currentPrice = stock?.CurrentPrice;
+        decimal? week52High = stock?.Week52High;
+        decimal? week52Low = stock?.Week52Low;
 
-        int techScore = CalculateTechnicalScore(tech, profile, currentPrice);
+        int techScore = CalculateTechnicalScore(tech, profile, currentPrice, week52High, week52Low);
         int fundScore = CalculateFundamentalScore(fund, profile);
-        int sentScore = sent != null ? (int)((sent.SentimentScore + 1m) / 2m * 100m) : 50;
+        int sentScore = CalculateSentimentScore(sent);
         int divScore = CalculateDividendScore(fund);
 
         double overall = (profile.TechnicalWeight / 100.0 * techScore)
@@ -39,10 +41,10 @@ public class StockAnalysisEngine : IStockAnalysisEngine
         int overallScore = Math.Clamp((int)overall, 0, 100);
 
         var overallSignal = GetSignal(overallScore, profile);
+        // Alert fires if overall score passes the threshold OR if any two category scores are exceptionally high
         bool isAlert = overallScore >= profile.AlertMinOverallScore
                     && techScore >= profile.AlertMinTechnicalScore
-                    && fundScore >= profile.AlertMinFundamentalScore
-                    && sentScore >= profile.AlertMinSentimentScore;
+                    && fundScore >= profile.AlertMinFundamentalScore;
 
         var reasoning = GenerateReasoning(stock?.CompanyName ?? "", techScore, fundScore, sentScore, divScore, overallSignal, tech, fund, sent);
 
@@ -80,94 +82,125 @@ public class StockAnalysisEngine : IStockAnalysisEngine
         }
     }
 
-    private static int CalculateTechnicalScore(TechnicalIndicator? t, ScoringProfile p, decimal? currentPrice)
+    private static int CalculateTechnicalScore(TechnicalIndicator? t, ScoringProfile p, decimal? currentPrice,
+        decimal? week52High = null, decimal? week52Low = null)
     {
         if (t == null) return 50;
         double score = 0;
+        double totalWeightUsed = 0;
 
         // RSI: <30 oversold (buy signal), >70 overbought (sell signal)
         if (t.RSI14.HasValue)
         {
             var rsi = (double)t.RSI14.Value;
-            double rsiScore = rsi < 30 ? 90
-                : rsi < 40 ? 75
-                : rsi < 50 ? 60
-                : rsi < 60 ? 50
-                : rsi < 70 ? 35
-                : 15; // >70 overbought
+            // Continuous interpolation for more granular scoring
+            double rsiScore;
+            if (rsi <= 20) rsiScore = 95;
+            else if (rsi <= 30) rsiScore = 95 - (rsi - 20) / 10 * 10; // 95→85
+            else if (rsi <= 40) rsiScore = 85 - (rsi - 30) / 10 * 15; // 85→70
+            else if (rsi <= 50) rsiScore = 70 - (rsi - 40) / 10 * 15; // 70→55
+            else if (rsi <= 60) rsiScore = 55 - (rsi - 50) / 10 * 15; // 55→40
+            else if (rsi <= 70) rsiScore = 40 - (rsi - 60) / 10 * 15; // 40→25
+            else rsiScore = Math.Max(5, 25 - (rsi - 70) / 10 * 15);  // 25→10
             score += p.TechRSIWeight / 100.0 * rsiScore;
+            totalWeightUsed += p.TechRSIWeight;
         }
 
-        // MACD: histogram direction + signal crossover
+        // MACD: histogram direction + signal crossover + histogram magnitude
         if (t.MACDHistogram.HasValue)
         {
-            double macdScore = t.MACDHistogram > 0 ? 65 : 35;
+            double macdScore = t.MACDHistogram > 0 ? 70 : 30;
             if (t.MACD.HasValue && t.MACDSignal.HasValue)
             {
                 if (t.MACD > t.MACDSignal) macdScore += 15; // Bullish crossover
-                else macdScore -= 10;
+                else macdScore -= 15; // Bearish crossover
             }
+            // Histogram strength bonus: bigger histogram = stronger conviction
+            var histAbs = Math.Abs((double)t.MACDHistogram.Value);
+            if (histAbs > 5) macdScore += (t.MACDHistogram > 0 ? 5 : -5);
             score += p.TechMACDWeight / 100.0 * Math.Clamp(macdScore, 0, 100);
+            totalWeightUsed += p.TechMACDWeight;
         }
 
         // Moving Average: Golden Cross (SMA50 > SMA200) vs Death Cross
         if (t.SMA50.HasValue && t.SMA200.HasValue)
         {
-            double maScore = t.SMA50 > t.SMA200 ? 75 : 25;
-            // Price above 50-day MA is additional bullish signal
+            double maScore = t.SMA50 > t.SMA200 ? 78 : 22;
             if (currentPrice.HasValue)
             {
-                if (currentPrice > t.SMA50) maScore += 10;
-                if (currentPrice > t.SMA200) maScore += 5;
+                // Price position relative to MAs gives stronger signals
+                if (currentPrice > t.SMA50 && currentPrice > t.SMA200) maScore += 12;
+                else if (currentPrice > t.SMA50) maScore += 5;
+                else if (currentPrice < t.SMA50 && currentPrice < t.SMA200) maScore -= 8;
             }
             score += p.TechMovingAvgWeight / 100.0 * Math.Clamp(maScore, 0, 100);
+            totalWeightUsed += p.TechMovingAvgWeight;
         }
 
-        // Bollinger Bands: score based on price position relative to bands
+        // Bollinger Bands: price position relative to bands
         if (t.BollingerLower.HasValue && t.BollingerUpper.HasValue && t.BollingerMiddle.HasValue)
         {
-            double bbScore = 50; // neutral default
+            double bbScore = 50;
             if (currentPrice.HasValue)
             {
                 var lower = (double)t.BollingerLower.Value;
                 var upper = (double)t.BollingerUpper.Value;
-                var middle = (double)t.BollingerMiddle.Value;
                 var price = (double)currentPrice.Value;
                 var bandRange = upper - lower;
 
                 if (bandRange > 0)
                 {
-                    // Price below lower band: oversold, strong buy signal
-                    // Price above upper band: overbought, sell signal
-                    // Price near middle: neutral
-                    if (price <= lower) bbScore = 85;
-                    else if (price >= upper) bbScore = 15;
+                    if (price <= lower) bbScore = 90;
+                    else if (price >= upper) bbScore = 10;
                     else
                     {
-                        // Interpolate: lower half of band is bullish, upper half is bearish
-                        var positionInBand = (price - lower) / bandRange; // 0=at lower, 1=at upper
-                        bbScore = 80 - (positionInBand * 65); // 80 at lower, 15 at upper
+                        var positionInBand = (price - lower) / bandRange;
+                        bbScore = 88 - (positionInBand * 76); // 88 at lower → 12 at upper
                     }
                 }
             }
             score += p.TechBollingerWeight / 100.0 * bbScore;
+            totalWeightUsed += p.TechBollingerWeight;
         }
 
         // ADX: trend strength (>25 = strong trend, good for momentum strategies)
         if (t.ADX14.HasValue)
         {
             var adx = (double)t.ADX14.Value;
-            double adxScore = adx > 40 ? 80 : adx > 25 ? 65 : adx > 15 ? 45 : 30;
+            double adxScore = adx > 50 ? 90 : adx > 40 ? 80 : adx > 25 ? 65 : adx > 15 ? 40 : 25;
             score += p.TechADXWeight / 100.0 * adxScore;
+            totalWeightUsed += p.TechADXWeight;
         }
 
-        // Volume (OBV): positive OBV trend confirms price moves
+        // Volume (OBV): positive OBV = accumulation, negative = distribution
         if (t.OBV.HasValue)
         {
-            // OBV being positive is a good sign of accumulation
-            double obvScore = t.OBV > 0 ? 65 : 40;
+            double obvScore = t.OBV > 0 ? 70 : 35;
             score += p.TechVolumeWeight / 100.0 * obvScore;
+            totalWeightUsed += p.TechVolumeWeight;
         }
+
+        // 52-Week proximity bonus (not weighted by sub-weights, acts as a bonus)
+        if (currentPrice.HasValue && week52High.HasValue && week52Low.HasValue && week52High > week52Low)
+        {
+            var range = (double)(week52High.Value - week52Low.Value);
+            var position = (double)(currentPrice.Value - week52Low.Value) / range; // 0=at low, 1=at high
+            // Near 52-week low: value opportunity (buy signal); near 52-week high: momentum (slightly bullish)
+            // Sweet spot: 0.3-0.6 (recovering from lows but not overbought)
+            double w52Score;
+            if (position < 0.15) w52Score = 80;       // Deep value territory
+            else if (position < 0.35) w52Score = 72;  // Value zone
+            else if (position < 0.55) w52Score = 58;  // Neutral-bullish
+            else if (position < 0.75) w52Score = 48;  // Getting expensive
+            else if (position < 0.90) w52Score = 35;  // Near highs, caution
+            else w52Score = 20;                        // At 52-week high, overbought
+            // Apply as a small bonus (10% effective weight)
+            score = score * 0.90 + w52Score * 0.10;
+        }
+
+        // Normalize if not all sub-indicators had data
+        if (totalWeightUsed > 0 && totalWeightUsed < 100)
+            score = score * (100.0 / totalWeightUsed);
 
         return Math.Clamp((int)score, 0, 100);
     }
@@ -216,18 +249,59 @@ public class StockAnalysisEngine : IStockAnalysisEngine
         return Math.Clamp((int)score, 0, 100);
     }
 
+    /// <summary>Converts raw sentiment data into a 0-100 score with more variance</summary>
+    private static int CalculateSentimentScore(Nifty50.Core.Entities.SentimentAnalysis? sent)
+    {
+        if (sent == null) return 50;
+
+        // Use the raw score (-1 to +1) but apply a wider mapping
+        var raw = (double)sent.SentimentScore; // -1 to +1
+        // Apply sigmoid-like curve to amplify differences around neutral
+        double amplified = raw * 2.5; // Amplify small differences
+        amplified = Math.Clamp(amplified, -1, 1);
+        double baseScore = (amplified + 1.0) / 2.0 * 100.0; // Map to 0-100
+
+        // Bonus/penalty from article count balance
+        int totalArticles = sent.PositiveCount + sent.NegativeCount + sent.NeutralCount;
+        if (totalArticles > 0)
+        {
+            double posRatio = (double)sent.PositiveCount / totalArticles;
+            double negRatio = (double)sent.NegativeCount / totalArticles;
+            // Shift score based on article sentiment ratio
+            baseScore += (posRatio - negRatio) * 20; // Up to ±20 point swing
+        }
+
+        // Volume bonus: more articles = more confidence in the score
+        if (totalArticles >= 5) baseScore += 3;
+        else if (totalArticles <= 1) baseScore -= 3; // Low confidence penalty
+
+        return Math.Clamp((int)baseScore, 0, 100);
+    }
+
     private static int CalculateDividendScore(FundamentalMetric? f)
     {
-        if (f == null) return 50;
-        double score = 50;
+        if (f == null || !f.DividendYield.HasValue) return 30; // No dividend = below average
+        double score;
 
         // Dividend yield (Indian market context: >3% is excellent)
-        if (f.DividendYield.HasValue)
-            score = f.DividendYield > 5 ? 90 : f.DividendYield > 3 ? 78 : f.DividendYield > 1.5m ? 62 : f.DividendYield > 0.5m ? 45 : 25;
+        var yield = (double)f.DividendYield.Value;
+        if (yield > 6) score = 95;
+        else if (yield > 4) score = 88;
+        else if (yield > 3) score = 80;
+        else if (yield > 2) score = 68;
+        else if (yield > 1) score = 55;
+        else if (yield > 0.3) score = 42;
+        else score = 30;
 
-        // Payout ratio penalty: >80% is unsustainable
-        if (f.DividendPayoutRatio.HasValue && f.DividendPayoutRatio > 80)
-            score = Math.Max(0, score - 15);
+        // Payout ratio adjustment: graduated rather than cliff penalty
+        if (f.DividendPayoutRatio.HasValue)
+        {
+            var payout = (double)f.DividendPayoutRatio.Value;
+            if (payout > 90) score -= 20;       // Dangerously high
+            else if (payout > 80) score -= 12;  // Unsustainable
+            else if (payout > 60) score -= 3;   // Moderate (slight concern)
+            else if (payout >= 25 && payout <= 60) score += 5; // Healthy payout range bonus
+        }
 
         return Math.Clamp((int)score, 0, 100);
     }

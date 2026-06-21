@@ -20,13 +20,13 @@ public class YahooFundamentalsService : IFundamentalDataService
         _logger = logger;
         _monitor = monitor;
         _cookieManager = cookieManager;
-        _http.DefaultRequestHeaders.UserAgent.ParseAdd("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36");
+        _http.DefaultRequestHeaders.UserAgent.ParseAdd("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36");
     }
 
     public async Task<(List<FinancialStatement> Statements, FundamentalMetric? Metric)> FetchFundamentalsAsync(string symbol)
     {
         // Yahoo Finance restricted historical arrays. We now pull TTM snapshots from financialData.
-        var modules = "financialData,defaultKeyStatistics,incomeStatementHistory";
+        var modules = "financialData,defaultKeyStatistics,incomeStatementHistory,summaryDetail";
         var (cookie, crumb) = await _cookieManager.GetCookieAndCrumbAsync();
         var crumbQuery = string.IsNullOrEmpty(crumb) ? "" : $"&crumb={crumb}";
         var url = $"https://query1.finance.yahoo.com/v10/finance/quoteSummary/{symbol}?modules={modules}{crumbQuery}";
@@ -131,9 +131,13 @@ public class YahooFundamentalsService : IFundamentalDataService
             PBRatio = dks.HasValue ? TryGetVal(dks.Value, "priceToBook") : null,
         };
 
-        // Fallback to trailing P/E if forward is missing
-        if (!metric.PERatio.HasValue && result.TryGetProperty("summaryDetail", out var sd))
-            metric.PERatio = TryGetVal(sd, "trailingPE");
+        // Key stats from summaryDetail
+        if (result.TryGetProperty("summaryDetail", out var sd))
+        {
+            if (!metric.PERatio.HasValue) metric.PERatio = TryGetVal(sd, "trailingPE");
+            if (TryGetVal(sd, "dividendYield") is decimal divYield) metric.DividendYield = divYield * 100m;
+            if (TryGetVal(sd, "payoutRatio") is decimal payout) metric.DividendPayoutRatio = payout * 100m;
+        }
 
         return (results, metric);
     }

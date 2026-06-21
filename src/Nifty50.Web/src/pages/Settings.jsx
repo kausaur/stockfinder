@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { getScoringProfiles, getActiveProfile, updateActiveProfile, activateProfile, resetProfile, recalculateAnalyses } from '../services/api';
 import { PieChart, Pie, Cell, ResponsiveContainer } from 'recharts';
 
-const presetEmoji = { Balanced: '🟢', Growth: '🚀', Value: '💎', Income: '💰' };
+const presetEmoji = { Balanced: '🟢', Growth: '🚀', Value: '💎', Income: '💰', Momentum: '⚡', Quality: '🏆' };
 const COLORS = ['#3b82f6', '#8b5cf6', '#f59e0b', '#ec4899'];
 
 export default function Settings() {
@@ -74,7 +74,7 @@ export default function Settings() {
       {/* Presets */}
       <div>
         <h3 className="text-sm font-semibold text-slate-300 mb-3">📋 Scoring Presets</h3>
-        <div className="grid grid-cols-4 gap-4">
+        <div className="grid grid-cols-3 gap-4">
           {profiles.filter(p => p.isPreset).map(p => (
             <div key={p.id} onClick={() => handleActivate(p.id)}
               className={`glass-card p-5 cursor-pointer text-center transition-all ${p.isDefault ? 'ring-2 ring-blue-500 bg-blue-500/10' : 'hover:bg-slate-700/30'}`}>

@@ -133,57 +133,83 @@ public static class SeedData
 
         var presets = new[]
         {
-            // Balanced: equal emphasis across all factors — good general-purpose profile
+            // Balanced: well-rounded assessment across all factors
             new ScoringProfile
             {
                 Name = "Balanced", IsDefault = true, IsPreset = true,
-                TechnicalWeight = 35, FundamentalWeight = 30, SentimentWeight = 20, DividendWeight = 15,
+                TechnicalWeight = 30, FundamentalWeight = 35, SentimentWeight = 15, DividendWeight = 20,
                 TechRSIWeight = 20, TechMACDWeight = 25, TechMovingAvgWeight = 25,
                 TechBollingerWeight = 15, TechADXWeight = 10, TechVolumeWeight = 5,
                 FundValuationWeight = 25, FundProfitabilityWeight = 30,
                 FundLiquidityWeight = 15, FundLeverageWeight = 15, FundGrowthWeight = 15,
-                AlertMinOverallScore = 78, AlertMinTechnicalScore = 70,
-                AlertMinFundamentalScore = 65, AlertMinSentimentScore = 55,
-                StrongBuyThreshold = 80, BuyThreshold = 65, HoldThreshold = 45, SellThreshold = 30,
+                AlertMinOverallScore = 65, AlertMinTechnicalScore = 50,
+                AlertMinFundamentalScore = 55, AlertMinSentimentScore = 40,
+                StrongBuyThreshold = 75, BuyThreshold = 60, HoldThreshold = 42, SellThreshold = 28,
             },
-            // Growth: prioritises earnings growth, revenue momentum, and sentiment
+            // Growth: chases earnings & revenue momentum, tolerates premium valuations
             new ScoringProfile
             {
                 Name = "Growth", IsPreset = true,
-                TechnicalWeight = 30, FundamentalWeight = 40, SentimentWeight = 25, DividendWeight = 5,
-                TechRSIWeight = 15, TechMACDWeight = 30, TechMovingAvgWeight = 30,
-                TechBollingerWeight = 10, TechADXWeight = 10, TechVolumeWeight = 5,
-                FundValuationWeight = 15, FundProfitabilityWeight = 25,
-                FundLiquidityWeight = 10, FundLeverageWeight = 10, FundGrowthWeight = 40,
-                AlertMinOverallScore = 75, AlertMinTechnicalScore = 65,
-                AlertMinFundamentalScore = 70, AlertMinSentimentScore = 60,
-                StrongBuyThreshold = 80, BuyThreshold = 65, HoldThreshold = 45, SellThreshold = 30,
+                TechnicalWeight = 25, FundamentalWeight = 45, SentimentWeight = 20, DividendWeight = 10,
+                TechRSIWeight = 15, TechMACDWeight = 30, TechMovingAvgWeight = 25,
+                TechBollingerWeight = 10, TechADXWeight = 15, TechVolumeWeight = 5,
+                FundValuationWeight = 10, FundProfitabilityWeight = 25,
+                FundLiquidityWeight = 10, FundLeverageWeight = 10, FundGrowthWeight = 45,
+                AlertMinOverallScore = 62, AlertMinTechnicalScore = 45,
+                AlertMinFundamentalScore = 60, AlertMinSentimentScore = 40,
+                StrongBuyThreshold = 72, BuyThreshold = 58, HoldThreshold = 40, SellThreshold = 25,
             },
-            // Value: prioritises cheap valuation, profitability, and balance sheet strength
+            // Value: hunts for undervalued stocks with strong balance sheets
             new ScoringProfile
             {
                 Name = "Value", IsPreset = true,
-                TechnicalWeight = 20, FundamentalWeight = 60, SentimentWeight = 10, DividendWeight = 10,
-                TechRSIWeight = 30, TechMACDWeight = 15, TechMovingAvgWeight = 20,
-                TechBollingerWeight = 20, TechADXWeight = 10, TechVolumeWeight = 5,
+                TechnicalWeight = 15, FundamentalWeight = 60, SentimentWeight = 5, DividendWeight = 20,
+                TechRSIWeight = 35, TechMACDWeight = 10, TechMovingAvgWeight = 20,
+                TechBollingerWeight = 25, TechADXWeight = 5, TechVolumeWeight = 5,
                 FundValuationWeight = 40, FundProfitabilityWeight = 25,
                 FundLiquidityWeight = 15, FundLeverageWeight = 15, FundGrowthWeight = 5,
-                AlertMinOverallScore = 75, AlertMinTechnicalScore = 55,
-                AlertMinFundamentalScore = 75, AlertMinSentimentScore = 45,
-                StrongBuyThreshold = 80, BuyThreshold = 65, HoldThreshold = 45, SellThreshold = 30,
+                AlertMinOverallScore = 63, AlertMinTechnicalScore = 40,
+                AlertMinFundamentalScore = 65, AlertMinSentimentScore = 30,
+                StrongBuyThreshold = 73, BuyThreshold = 58, HoldThreshold = 40, SellThreshold = 28,
             },
-            // Income: prioritises dividend yield and payout sustainability
+            // Income: maximises dividend yield with payout sustainability
             new ScoringProfile
             {
                 Name = "Income", IsPreset = true,
-                TechnicalWeight = 15, FundamentalWeight = 25, SentimentWeight = 10, DividendWeight = 50,
-                TechRSIWeight = 20, TechMACDWeight = 20, TechMovingAvgWeight = 30,
-                TechBollingerWeight = 15, TechADXWeight = 10, TechVolumeWeight = 5,
+                TechnicalWeight = 10, FundamentalWeight = 25, SentimentWeight = 5, DividendWeight = 60,
+                TechRSIWeight = 20, TechMACDWeight = 15, TechMovingAvgWeight = 30,
+                TechBollingerWeight = 15, TechADXWeight = 10, TechVolumeWeight = 10,
                 FundValuationWeight = 20, FundProfitabilityWeight = 30,
                 FundLiquidityWeight = 20, FundLeverageWeight = 20, FundGrowthWeight = 10,
-                AlertMinOverallScore = 72, AlertMinTechnicalScore = 50,
-                AlertMinFundamentalScore = 60, AlertMinSentimentScore = 45,
-                StrongBuyThreshold = 80, BuyThreshold = 65, HoldThreshold = 45, SellThreshold = 30,
+                AlertMinOverallScore = 60, AlertMinTechnicalScore = 35,
+                AlertMinFundamentalScore = 45, AlertMinSentimentScore = 30,
+                StrongBuyThreshold = 70, BuyThreshold = 55, HoldThreshold = 38, SellThreshold = 25,
+            },
+            // Momentum: rides strong price trends with high conviction
+            new ScoringProfile
+            {
+                Name = "Momentum", IsPreset = true,
+                TechnicalWeight = 55, FundamentalWeight = 20, SentimentWeight = 20, DividendWeight = 5,
+                TechRSIWeight = 15, TechMACDWeight = 30, TechMovingAvgWeight = 20,
+                TechBollingerWeight = 10, TechADXWeight = 20, TechVolumeWeight = 5,
+                FundValuationWeight = 15, FundProfitabilityWeight = 30,
+                FundLiquidityWeight = 10, FundLeverageWeight = 15, FundGrowthWeight = 30,
+                AlertMinOverallScore = 62, AlertMinTechnicalScore = 58,
+                AlertMinFundamentalScore = 40, AlertMinSentimentScore = 40,
+                StrongBuyThreshold = 72, BuyThreshold = 58, HoldThreshold = 40, SellThreshold = 26,
+            },
+            // Quality: focuses on high-ROE, low-debt, consistently profitable companies
+            new ScoringProfile
+            {
+                Name = "Quality", IsPreset = true,
+                TechnicalWeight = 15, FundamentalWeight = 55, SentimentWeight = 10, DividendWeight = 20,
+                TechRSIWeight = 20, TechMACDWeight = 20, TechMovingAvgWeight = 25,
+                TechBollingerWeight = 15, TechADXWeight = 10, TechVolumeWeight = 10,
+                FundValuationWeight = 15, FundProfitabilityWeight = 40,
+                FundLiquidityWeight = 15, FundLeverageWeight = 25, FundGrowthWeight = 5,
+                AlertMinOverallScore = 63, AlertMinTechnicalScore = 40,
+                AlertMinFundamentalScore = 60, AlertMinSentimentScore = 35,
+                StrongBuyThreshold = 73, BuyThreshold = 58, HoldThreshold = 40, SellThreshold = 26,
             },
         };
 
