@@ -1,0 +1,10 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/Nifty50.Api/Nifty50.Api.csproj" />
+    <Project Path="src/Nifty50.Core/Nifty50.Core.csproj" />
+    <Project Path="src/Nifty50.Infrastructure/Nifty50.Infrastructure.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/Nifty50.Tests/Nifty50.Tests.csproj" />
+  </Folder>
+</Solution>

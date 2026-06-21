@@ -1,0 +1,28 @@
+import axios from 'axios';
+
+const api = axios.create({ baseURL: 'http://localhost:5276/api' });
+
+export const getStocks = (search, sector) => api.get('/stocks', { params: { search, sector } });
+export const getStock = (id) => api.get(`/stocks/${id}`);
+export const getStockPrices = (id, from, to) => api.get(`/stocks/${id}/prices`, { params: { from, to } });
+export const getDividends = (id) => api.get(`/stocks/${id}/dividends`);
+export const getFundamentals = (id) => api.get(`/stocks/${id}/fundamentals`);
+export const getFundamentalsHistory = (id) => api.get(`/stocks/${id}/fundamentals/history`);
+export const getFinancials = (id, type, period) => api.get(`/stocks/${id}/financials`, { params: { type, period } });
+export const getTechnicals = (id) => api.get(`/stocks/${id}/technicals`);
+export const getTechnicalsHistory = (id, from, to) => api.get(`/stocks/${id}/technicals/history`, { params: { from, to } });
+export const getSentiment = (id) => api.get(`/stocks/${id}/sentiment`);
+export const getAnalysis = (id) => api.get(`/stocks/${id}/analysis`);
+export const getAlerts = () => api.get('/alerts');
+export const getDashboard = () => api.get('/dashboard');
+export const getScoringProfiles = () => api.get('/scoring-profiles');
+export const getActiveProfile = () => api.get('/scoring-profiles/active');
+export const updateActiveProfile = (data) => api.put('/scoring-profiles/active', data);
+export const createProfile = (data) => api.post('/scoring-profiles', data);
+export const activateProfile = (id) => api.post(`/scoring-profiles/${id}/activate`);
+export const resetProfile = () => api.post('/scoring-profiles/reset');
+export const recalculateAnalyses = () => api.post('/analysis/recalculate');
+export const refreshData = () => api.post('/refresh');
+export const getAdminHealth = () => api.get('/admin/health');
+export const getAdminApiCalls = (apiName, limit) => api.get('/admin/api-calls', { params: { api: apiName, limit } });
+export default api;

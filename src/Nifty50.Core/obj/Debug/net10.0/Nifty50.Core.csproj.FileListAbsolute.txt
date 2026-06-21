@@ -1,0 +1,11 @@
+F:\projects\nifty50\src\Nifty50.Core\bin\Debug\net10.0\Nifty50.Core.deps.json
+F:\projects\nifty50\src\Nifty50.Core\bin\Debug\net10.0\Nifty50.Core.dll
+F:\projects\nifty50\src\Nifty50.Core\bin\Debug\net10.0\Nifty50.Core.pdb
+F:\projects\nifty50\src\Nifty50.Core\obj\Debug\net10.0\Nifty50.Core.GeneratedMSBuildEditorConfig.editorconfig
+F:\projects\nifty50\src\Nifty50.Core\obj\Debug\net10.0\Nifty50.Core.AssemblyInfoInputs.cache
+F:\projects\nifty50\src\Nifty50.Core\obj\Debug\net10.0\Nifty50.Core.AssemblyInfo.cs
+F:\projects\nifty50\src\Nifty50.Core\obj\Debug\net10.0\Nifty50.Core.csproj.CoreCompileInputs.cache
+F:\projects\nifty50\src\Nifty50.Core\obj\Debug\net10.0\Nifty50.Core.dll
+F:\projects\nifty50\src\Nifty50.Core\obj\Debug\net10.0\refint\Nifty50.Core.dll
+F:\projects\nifty50\src\Nifty50.Core\obj\Debug\net10.0\Nifty50.Core.pdb
+F:\projects\nifty50\src\Nifty50.Core\obj\Debug\net10.0\ref\Nifty50.Core.dll
