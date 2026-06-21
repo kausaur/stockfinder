@@ -23,9 +23,10 @@ public class YahooFundamentalsService : IFundamentalDataService
         _http.DefaultRequestHeaders.UserAgent.ParseAdd("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36");
     }
 
-    public async Task<List<FinancialStatement>> FetchFinancialStatementsAsync(string symbol)
+    public async Task<(List<FinancialStatement> Statements, FundamentalMetric? Metric)> FetchFundamentalsAsync(string symbol)
     {
-        var modules = "incomeStatementHistory,balanceSheetHistory,cashflowStatementHistory,incomeStatementHistoryQuarterly,balanceSheetHistoryQuarterly,cashflowStatementHistoryQuarterly";
+        // Yahoo Finance restricted historical arrays. We now pull TTM snapshots from financialData.
+        var modules = "financialData,defaultKeyStatistics,incomeStatementHistory";
         var (cookie, crumb) = await _cookieManager.GetCookieAndCrumbAsync();
         var crumbQuery = string.IsNullOrEmpty(crumb) ? "" : $"&crumb={crumb}";
         var url = $"https://query1.finance.yahoo.com/v10/finance/quoteSummary/{symbol}?modules={modules}{crumbQuery}";
@@ -46,17 +47,19 @@ public class YahooFundamentalsService : IFundamentalDataService
             sw.Stop();
             _logger.LogWarning(ex, "Failed to fetch fundamentals for {Symbol}", symbol);
             _monitor.RecordApiCall(new ApiCallRecord("YahooFundamentals", url, DateTime.UtcNow, 500, sw.ElapsedMilliseconds, ex.Message));
-            return new List<FinancialStatement>();
+            return (new List<FinancialStatement>(), null);
         }
     }
 
-    private static List<FinancialStatement> ParseFinancials(string json)
+    private static (List<FinancialStatement> Statements, FundamentalMetric? Metric) ParseFinancials(string json)
     {
         var results = new List<FinancialStatement>();
         using var doc = JsonDocument.Parse(json);
         var result = doc.RootElement.GetProperty("quoteSummary").GetProperty("result")[0];
 
-        // Income Statement
+        var ttmDate = DateTime.UtcNow;
+
+        // Try to get income statements if they exist
         if (result.TryGetProperty("incomeStatementHistory", out var incHist) && incHist.TryGetProperty("incomeStatementHistory", out var incStmts))
         {
             foreach (var stmt in incStmts.EnumerateArray())
@@ -73,66 +76,66 @@ public class YahooFundamentalsService : IFundamentalDataService
                     NetIncome = TryGetVal(stmt, "netIncomeApplicableToCommonShares") ?? TryGetVal(stmt, "netIncome"),
                     OperatingExpenses = TryGetVal(stmt, "totalOperatingExpenses"),
                     InterestExpense = TryGetVal(stmt, "interestExpense"),
-                    EBITDA = TryGetVal(stmt, "ebitda"),
                     CostOfRevenue = TryGetVal(stmt, "costOfRevenue"),
                     TaxProvision = TryGetVal(stmt, "incomeTaxExpense"),
-                    // EPS: prefer diluted, fall back to basic — required for P/E ratio calculation
-                    DilutedEPS = TryGetVal(stmt, "dilutedEps"),
-                    EarningsPerShare = TryGetVal(stmt, "basicEps") ?? TryGetVal(stmt, "dilutedEps"),
                 });
             }
         }
 
-        // Balance Sheet
-        if (result.TryGetProperty("balanceSheetHistory", out var balHist) && balHist.TryGetProperty("balanceSheetStatements", out var balStmts))
+        JsonElement? fd = null;
+        JsonElement? dks = null;
+        if (result.TryGetProperty("financialData", out var fdVal)) fd = fdVal;
+        if (result.TryGetProperty("defaultKeyStatistics", out var dksVal)) dks = dksVal;
+
+        if (fd == null && dks == null) return (results, null);
+
+        // Build a synthetic TTM Financial Statement for balance sheet / cash flow data available in financialData
+        var ttmStatement = new FinancialStatement
         {
-            foreach (var stmt in balStmts.EnumerateArray())
-            {
-                if (!TryGetDate(stmt, "endDate", out var endDate)) continue;
-                results.Add(new FinancialStatement
-                {
-                    StatementType = StatementType.BalanceSheet,
-                    Period = PeriodType.Annual,
-                    PeriodEndDate = endDate,
-                    TotalAssets = TryGetVal(stmt, "totalAssets"),
-                    TotalLiabilities = TryGetVal(stmt, "totalLiab"),
-                    TotalEquity = TryGetVal(stmt, "totalStockholderEquity"),
-                    CurrentAssets = TryGetVal(stmt, "totalCurrentAssets"),
-                    CurrentLiabilities = TryGetVal(stmt, "totalCurrentLiabilities"),
-                    CashAndEquivalents = TryGetVal(stmt, "cash"),
-                    TotalDebt = TryGetVal(stmt, "shortLongTermDebt") + TryGetVal(stmt, "longTermDebt"),
-                    Inventory = TryGetVal(stmt, "inventory"),
-                    AccountsReceivable = TryGetVal(stmt, "netReceivables"),
-                    AccountsPayable = TryGetVal(stmt, "accountsPayable")
-                });
-            }
-        }
+            StatementType = StatementType.CashFlow, // Acts as our TTM summary
+            Period = PeriodType.Annual,
+            PeriodEndDate = ttmDate,
+            TotalRevenue = fd.HasValue ? TryGetVal(fd.Value, "totalRevenue") : null,
+            GrossProfit = fd.HasValue ? TryGetVal(fd.Value, "grossProfits") : null,
+            EBITDA = fd.HasValue ? TryGetVal(fd.Value, "ebitda") : null,
+            NetIncome = dks.HasValue ? TryGetVal(dks.Value, "netIncomeToCommon") : null,
+            TotalDebt = fd.HasValue ? TryGetVal(fd.Value, "totalDebt") : null,
+            CashAndEquivalents = fd.HasValue ? TryGetVal(fd.Value, "totalCash") : null,
+            OperatingCashFlow = fd.HasValue ? TryGetVal(fd.Value, "operatingCashflow") : null,
+            FreeCashFlow = fd.HasValue ? TryGetVal(fd.Value, "freeCashflow") : null,
+        };
+        results.Add(ttmStatement);
 
-        // Cash Flow
-        if (result.TryGetProperty("cashflowStatementHistory", out var cfHist) && cfHist.TryGetProperty("cashflowStatements", out var cfStmts))
+        // Build the FundamentalMetric pre-computed from Yahoo
+        var metric = new FundamentalMetric
         {
-            foreach (var stmt in cfStmts.EnumerateArray())
-            {
-                if (!TryGetDate(stmt, "endDate", out var endDate)) continue;
-                results.Add(new FinancialStatement
-                {
-                    StatementType = StatementType.CashFlow,
-                    Period = PeriodType.Annual,
-                    PeriodEndDate = endDate,
-                    OperatingCashFlow = TryGetVal(stmt, "totalCashFromOperatingActivities"),
-                    CapitalExpenditures = TryGetVal(stmt, "capitalExpenditures"),
-                    DividendsPaid = TryGetVal(stmt, "dividendsPaid"),
-                    ShareRepurchases = TryGetVal(stmt, "repurchaseOfStock"),
-                    // FreeCashFlow = OperatingCashFlow + CapEx (Yahoo reports CapEx as negative)
-                    FreeCashFlow = TryGetVal(stmt, "totalCashFromOperatingActivities") is decimal ocf
-                        && TryGetVal(stmt, "capitalExpenditures") is decimal capex
-                        ? ocf + capex
-                        : null,
-                });
-            }
-        }
+            ComputedAt = DateTime.UtcNow,
+            PeriodEndDate = ttmDate,
+            // Ratios straight from Yahoo
+            CurrentRatio = fd.HasValue ? TryGetVal(fd.Value, "currentRatio") : null,
+            QuickRatio = fd.HasValue ? TryGetVal(fd.Value, "quickRatio") : null,
+            DebtToEquity = fd.HasValue ? TryGetVal(fd.Value, "debtToEquity") / 100m : null, // Yahoo returns 36.6 for 36.6%
+            ROE = fd.HasValue ? TryGetVal(fd.Value, "returnOnEquity") * 100m : null, // Yahoo returns 0.09 for 9%
+            ROA = fd.HasValue ? TryGetVal(fd.Value, "returnOnAssets") * 100m : null,
+            GrossProfitMargin = fd.HasValue ? TryGetVal(fd.Value, "grossMargins") * 100m : null,
+            OperatingMargin = fd.HasValue ? TryGetVal(fd.Value, "operatingMargins") * 100m : null,
+            NetProfitMargin = fd.HasValue ? TryGetVal(fd.Value, "profitMargins") * 100m : null,
+            RevenueGrowthYoY = fd.HasValue ? TryGetVal(fd.Value, "revenueGrowth") * 100m : null,
+            EarningsGrowthYoY = fd.HasValue ? TryGetVal(fd.Value, "earningsGrowth") * 100m : null,
+            
+            // Key stats
+            EPS = dks.HasValue ? TryGetVal(dks.Value, "trailingEps") : null,
+            PERatio = dks.HasValue ? TryGetVal(dks.Value, "forwardPE") : null, // forwardPE is usually better filled
+            PEGRatio = dks.HasValue ? TryGetVal(dks.Value, "pegRatio") : null,
+            BookValuePerShare = dks.HasValue ? TryGetVal(dks.Value, "bookValue") : null,
+            PBRatio = dks.HasValue ? TryGetVal(dks.Value, "priceToBook") : null,
+        };
 
-        return results;
+        // Fallback to trailing P/E if forward is missing
+        if (!metric.PERatio.HasValue && result.TryGetProperty("summaryDetail", out var sd))
+            metric.PERatio = TryGetVal(sd, "trailingPE");
+
+        return (results, metric);
     }
 
     private static bool TryGetDate(JsonElement elem, string prop, out DateTime date)

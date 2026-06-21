@@ -150,15 +150,15 @@ public class DataRefreshService : BackgroundService, IDataRefreshService
                     await repo.AddDividendsAsync(divs);
                 }
 
-                // 5. Fetch financial statements from Yahoo Finance
-                var statements = await fundDataService.FetchFinancialStatementsAsync(symbol);
+                // 5. Fetch financial statements and TTM fundamentals from Yahoo Finance
+                var (statements, baseMetric) = await fundDataService.FetchFundamentalsAsync(symbol);
                 if (statements.Count > 0)
                 {
                     foreach (var s in statements) s.StockId = stock.Id;
                     await repo.AddFinancialStatementsAsync(statements);
 
                     // 6. Calculate fundamental metrics using real shares outstanding
-                    var metric = fundAnalysis.CalculateMetrics(stock.Id, statements, stock.CurrentPrice, stock.SharesOutstanding);
+                    var metric = fundAnalysis.CalculateMetrics(stock.Id, statements, stock.CurrentPrice, stock.SharesOutstanding, baseMetric);
                     await repo.AddFundamentalMetricAsync(metric);
                 }
 

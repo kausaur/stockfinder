@@ -30,7 +30,7 @@ public class YahooMetadataService : IStockMetadataService
 
     public async Task<StockMetadataDto?> FetchMetadataAsync(string symbol)
     {
-        var modules = "price,summaryProfile,defaultKeyStatistics";
+        var modules = "price,summaryProfile,defaultKeyStatistics,summaryDetail";
         var (cookie, crumb) = await _cookieManager.GetCookieAndCrumbAsync();
         var crumbQuery = string.IsNullOrEmpty(crumb) ? "" : $"&crumb={crumb}";
         var url = $"https://query1.finance.yahoo.com/v10/finance/quoteSummary/{symbol}?modules={modules}{crumbQuery}";

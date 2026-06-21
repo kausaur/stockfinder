@@ -42,7 +42,7 @@ public interface IStockDataService
 
 public interface IFundamentalDataService
 {
-    Task<List<FinancialStatement>> FetchFinancialStatementsAsync(string symbol);
+    Task<(List<FinancialStatement> Statements, FundamentalMetric? Metric)> FetchFundamentalsAsync(string symbol);
 }
 
 public interface ISentimentService
@@ -58,7 +58,7 @@ public interface ITechnicalAnalysisService
 public interface IFundamentalAnalysisService
 {
     FundamentalMetric CalculateMetrics(Guid stockId, List<FinancialStatement> statements,
-        decimal? currentPrice, long? sharesOutstanding = null);
+        decimal? currentPrice, long? sharesOutstanding = null, FundamentalMetric? baseMetric = null);
 }
 
 public interface IScoringProfileService
