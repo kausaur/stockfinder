@@ -67,4 +67,6 @@ For example, a **"Value Investor"** profile might be configured as:
 - Technical Weight: 10%
 - Sentiment Weight: 10%
 
-When the engine runs, it multiplies the raw 0-100 score of each category by these exact percentages to determine the stock's final `OverallScore`.
+Additionally, there are **sub-weights** within the Technical and Fundamental categories. For instance, the Technical category has internal weights for RSI, MACD, Moving Averages, Bollinger Bands, ADX, and Volume. 
+
+When the engine runs, it first calculates each category's score using its internal sub-weights. Then, it multiplies the raw 0-100 score of each category by the top-level percentages to determine the stock's final `OverallScore`.

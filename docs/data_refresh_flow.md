@@ -1,6 +1,6 @@
 # Data Refresh Flow
 
-The Data Refresh Flow is the heart of the Nifty50 Analyzer's automated data harvesting. Managed by the `DataRefreshService`, it systematically iterates through the hardcoded Nifty50 index stocks and aggregates historical data from various sources into the PostgreSQL database.
+The Data Refresh Flow is the heart of the Nifty50 Analyzer's automated data harvesting. Managed by the `DataRefreshService`, it systematically iterates through the Nifty50 index stocks on a configurable interval (default: 24 hours) and aggregates historical data and real-time metadata from various sources into the PostgreSQL database.
 
 ## Workflow Diagram
 
@@ -16,6 +16,11 @@ sequenceDiagram
     
     Worker->>Repo: Ensure Stock exists in DB
     Repo-->>Worker: Stock Id
+    
+    %% Metadata Fetching
+    Worker->>Yahoo: Fetch Metadata (Sector, MarketCap, SharesOutstanding, etc.)
+    Yahoo-->>Worker: JSON Metadata
+    Worker->>Repo: Update Stock entity
     
     %% Price Data Fetching
     Worker->>Yahoo: Fetch Historical Prices (incremental from last date)
