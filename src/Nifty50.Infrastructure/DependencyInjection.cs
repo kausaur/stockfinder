@@ -45,7 +45,7 @@ public static class DependencyInjection
         services.AddHttpClient<IStockMetadataService, YahooMetadataService>()
             .ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler { UseCookies = false })
             .AddPolicyHandler(retryPolicy);
-        services.AddHttpClient<ISentimentService, GNewsSentimentService>()
+        services.AddHttpClient<ISentimentService, YahooSentimentService>()
             .AddPolicyHandler(retryPolicy);
 
         // Background service

@@ -87,8 +87,6 @@ public class DataRefreshService : BackgroundService, IDataRefreshService
         var sentimentService = scope.ServiceProvider.GetRequiredService<ISentimentService>();
         var analysisEngine = scope.ServiceProvider.GetRequiredService<IStockAnalysisEngine>();
 
-        // Max stocks to fetch GNews sentiment for (free tier: 100 req/day)
-        var gnewsMaxStocks = _config.GetValue<int>("GNews:MaxStocksPerRefresh", 20);
 
         int count = 0;
         foreach (var (symbol, name) in Nifty50Seeds)
@@ -172,13 +170,10 @@ public class DataRefreshService : BackgroundService, IDataRefreshService
                     await repo.AddTechnicalIndicatorsAsync(recentIndicators);
                 }
 
-                // 8. Analyze sentiment via GNews API (rate-limited by config)
-                if (count <= gnewsMaxStocks)
-                {
-                    var sentiment = await sentimentService.AnalyzeSentimentAsync(name, symbol);
-                    sentiment.StockId = stock.Id;
-                    await repo.AddSentimentAsync(sentiment);
-                }
+                // 8. Analyze sentiment via Yahoo Finance
+                var sentiment = await sentimentService.AnalyzeSentimentAsync(name, symbol);
+                sentiment.StockId = stock.Id;
+                await repo.AddSentimentAsync(sentiment);
 
                 // Small delay between stocks to respect Yahoo Finance rate limits
                 await Task.Delay(500, ct);
