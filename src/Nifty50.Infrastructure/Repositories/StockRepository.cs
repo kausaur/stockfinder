@@ -186,7 +186,7 @@ public class StockRepository : IStockRepository
 
     public async Task AddAnalysisAsync(StockAnalysis analysis) { _db.StockAnalyses.Add(analysis); await _db.SaveChangesAsync(); }
 
-    public async Task ClearAnalysesAsync() { _db.StockAnalyses.RemoveRange(_db.StockAnalyses); await _db.SaveChangesAsync(); }
+    public async Task ClearAnalysesAsync() => await _db.StockAnalyses.ExecuteDeleteAsync();
 
     public async Task<DashboardDto> GetDashboardDataAsync()
     {

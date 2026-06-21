@@ -133,10 +133,58 @@ public static class SeedData
 
         var presets = new[]
         {
-            new ScoringProfile { Name = "Balanced", IsDefault = true, IsPreset = true, TechnicalWeight = 40, FundamentalWeight = 25, SentimentWeight = 20, DividendWeight = 15 },
-            new ScoringProfile { Name = "Growth", IsPreset = true, TechnicalWeight = 30, FundamentalWeight = 40, SentimentWeight = 25, DividendWeight = 5, FundGrowthWeight = 40, FundValuationWeight = 15 },
-            new ScoringProfile { Name = "Value", IsPreset = true, TechnicalWeight = 35, FundamentalWeight = 40, SentimentWeight = 10, DividendWeight = 15, FundValuationWeight = 40, FundProfitabilityWeight = 25 },
-            new ScoringProfile { Name = "Income", IsPreset = true, TechnicalWeight = 20, FundamentalWeight = 20, SentimentWeight = 10, DividendWeight = 50 },
+            // Balanced: equal emphasis across all factors — good general-purpose profile
+            new ScoringProfile
+            {
+                Name = "Balanced", IsDefault = true, IsPreset = true,
+                TechnicalWeight = 35, FundamentalWeight = 30, SentimentWeight = 20, DividendWeight = 15,
+                TechRSIWeight = 20, TechMACDWeight = 25, TechMovingAvgWeight = 25,
+                TechBollingerWeight = 15, TechADXWeight = 10, TechVolumeWeight = 5,
+                FundValuationWeight = 25, FundProfitabilityWeight = 30,
+                FundLiquidityWeight = 15, FundLeverageWeight = 15, FundGrowthWeight = 15,
+                AlertMinOverallScore = 78, AlertMinTechnicalScore = 70,
+                AlertMinFundamentalScore = 65, AlertMinSentimentScore = 55,
+                StrongBuyThreshold = 80, BuyThreshold = 65, HoldThreshold = 45, SellThreshold = 30,
+            },
+            // Growth: prioritises earnings growth, revenue momentum, and sentiment
+            new ScoringProfile
+            {
+                Name = "Growth", IsPreset = true,
+                TechnicalWeight = 30, FundamentalWeight = 40, SentimentWeight = 25, DividendWeight = 5,
+                TechRSIWeight = 15, TechMACDWeight = 30, TechMovingAvgWeight = 30,
+                TechBollingerWeight = 10, TechADXWeight = 10, TechVolumeWeight = 5,
+                FundValuationWeight = 15, FundProfitabilityWeight = 25,
+                FundLiquidityWeight = 10, FundLeverageWeight = 10, FundGrowthWeight = 40,
+                AlertMinOverallScore = 75, AlertMinTechnicalScore = 65,
+                AlertMinFundamentalScore = 70, AlertMinSentimentScore = 60,
+                StrongBuyThreshold = 80, BuyThreshold = 65, HoldThreshold = 45, SellThreshold = 30,
+            },
+            // Value: prioritises cheap valuation, profitability, and balance sheet strength
+            new ScoringProfile
+            {
+                Name = "Value", IsPreset = true,
+                TechnicalWeight = 20, FundamentalWeight = 60, SentimentWeight = 10, DividendWeight = 10,
+                TechRSIWeight = 30, TechMACDWeight = 15, TechMovingAvgWeight = 20,
+                TechBollingerWeight = 20, TechADXWeight = 10, TechVolumeWeight = 5,
+                FundValuationWeight = 40, FundProfitabilityWeight = 25,
+                FundLiquidityWeight = 15, FundLeverageWeight = 15, FundGrowthWeight = 5,
+                AlertMinOverallScore = 75, AlertMinTechnicalScore = 55,
+                AlertMinFundamentalScore = 75, AlertMinSentimentScore = 45,
+                StrongBuyThreshold = 80, BuyThreshold = 65, HoldThreshold = 45, SellThreshold = 30,
+            },
+            // Income: prioritises dividend yield and payout sustainability
+            new ScoringProfile
+            {
+                Name = "Income", IsPreset = true,
+                TechnicalWeight = 15, FundamentalWeight = 25, SentimentWeight = 10, DividendWeight = 50,
+                TechRSIWeight = 20, TechMACDWeight = 20, TechMovingAvgWeight = 30,
+                TechBollingerWeight = 15, TechADXWeight = 10, TechVolumeWeight = 5,
+                FundValuationWeight = 20, FundProfitabilityWeight = 30,
+                FundLiquidityWeight = 20, FundLeverageWeight = 20, FundGrowthWeight = 10,
+                AlertMinOverallScore = 72, AlertMinTechnicalScore = 50,
+                AlertMinFundamentalScore = 60, AlertMinSentimentScore = 45,
+                StrongBuyThreshold = 80, BuyThreshold = 65, HoldThreshold = 45, SellThreshold = 30,
+            },
         };
 
         db.ScoringProfiles.AddRange(presets);

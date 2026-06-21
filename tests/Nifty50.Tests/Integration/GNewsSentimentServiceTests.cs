@@ -44,7 +44,9 @@ public class GNewsSentimentServiceTests
             });
 
         var httpClient = new HttpClient(mockHttpMessageHandler.Object);
-        var service = new GNewsSentimentService(httpClient, mockLogger.Object, mockMonitor.Object);
+        var mockConfig = new Mock<Microsoft.Extensions.Configuration.IConfiguration>();
+        mockConfig.Setup(c => c["GNewsApiKey"]).Returns("test-key");
+        var service = new GNewsSentimentService(httpClient, mockLogger.Object, mockMonitor.Object, mockConfig.Object);
 
         var result = await service.AnalyzeSentimentAsync("Test Company", "TEST");
 

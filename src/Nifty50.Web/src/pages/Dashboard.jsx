@@ -19,6 +19,12 @@ export default function Dashboard() {
       .catch(console.error).finally(() => setLoading(false));
   }, []);
 
+  // Group alerts by their actual signal type for accurate display
+  const alertsBySignal = alerts.reduce((acc, a) => {
+    acc[a.overallSignal] = (acc[a.overallSignal] || 0) + 1;
+    return acc;
+  }, {});
+
   if (loading) return <div className="flex items-center justify-center h-64"><div className="animate-spin text-4xl">⟳</div></div>;
   if (!data) return <p className="text-slate-400">No data available. Try refreshing.</p>;
 
@@ -30,8 +36,15 @@ export default function Dashboard() {
           <div className="flex items-center gap-3">
             <span className="text-2xl">🚨</span>
             <div>
-              <h3 className="font-bold text-amber-400">{alerts.length} Strong Buy Alert{alerts.length > 1 ? 's' : ''}</h3>
-              <p className="text-sm text-slate-400">{alerts.map(a => a.symbol).join(', ')}</p>
+              <h3 className="font-bold text-amber-400">
+                {alerts.length} Active Signal{alerts.length > 1 ? 's' : ''}
+              </h3>
+              <p className="text-sm text-slate-400">
+                {Object.entries(alertsBySignal)
+                  .map(([sig, cnt]) => `${cnt}× ${sig}`).join(' · ')}
+                {' '}&mdash; {alerts.slice(0, 4).map(a => a.symbol).join(', ')}
+                {alerts.length > 4 ? ` +${alerts.length - 4} more` : ''}
+              </p>
             </div>
             <button onClick={() => navigate('/alerts')} className="ml-auto text-sm text-amber-400 hover:underline">View All →</button>
           </div>

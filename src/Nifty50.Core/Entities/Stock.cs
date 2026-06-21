@@ -12,6 +12,7 @@ public class Stock : BaseEntity
     public decimal? DayChangePercent { get; set; }
     public decimal? Week52High { get; set; }
     public decimal? Week52Low { get; set; }
+    public long? SharesOutstanding { get; set; }
     public bool IsActive { get; set; } = true;
 
     // Navigation properties

@@ -67,3 +67,14 @@ public record ApiHealthDto(string ApiName, int TotalCalls, int SuccessCount, int
 
 public record AdminDashboardDto(List<ApiHealthDto> ApiHealth, DateTime ServerStartedAt,
     int TotalStocksInDb, DateTime? LastRefreshAt);
+
+public record StockMetadataDto(
+    string? Sector,
+    string? Industry,
+    decimal? MarketCap,
+    decimal? Week52High,
+    decimal? Week52Low,
+    decimal? DayChange,
+    decimal? DayChangePercent,
+    decimal? CurrentPrice,
+    long? SharesOutstanding);

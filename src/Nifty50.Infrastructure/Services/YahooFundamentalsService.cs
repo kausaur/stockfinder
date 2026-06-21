@@ -1,4 +1,4 @@
-﻿using System.Text.Json;
+using System.Text.Json;
 using Microsoft.Extensions.Logging;
 using Nifty50.Core.DTOs;
 using Nifty50.Core.Entities;
@@ -72,7 +72,13 @@ public class YahooFundamentalsService : IFundamentalDataService
                     OperatingIncome = TryGetVal(stmt, "operatingIncome"),
                     NetIncome = TryGetVal(stmt, "netIncomeApplicableToCommonShares") ?? TryGetVal(stmt, "netIncome"),
                     OperatingExpenses = TryGetVal(stmt, "totalOperatingExpenses"),
-                    InterestExpense = TryGetVal(stmt, "interestExpense")
+                    InterestExpense = TryGetVal(stmt, "interestExpense"),
+                    EBITDA = TryGetVal(stmt, "ebitda"),
+                    CostOfRevenue = TryGetVal(stmt, "costOfRevenue"),
+                    TaxProvision = TryGetVal(stmt, "incomeTaxExpense"),
+                    // EPS: prefer diluted, fall back to basic — required for P/E ratio calculation
+                    DilutedEPS = TryGetVal(stmt, "dilutedEps"),
+                    EarningsPerShare = TryGetVal(stmt, "basicEps") ?? TryGetVal(stmt, "dilutedEps"),
                 });
             }
         }
@@ -115,7 +121,13 @@ public class YahooFundamentalsService : IFundamentalDataService
                     PeriodEndDate = endDate,
                     OperatingCashFlow = TryGetVal(stmt, "totalCashFromOperatingActivities"),
                     CapitalExpenditures = TryGetVal(stmt, "capitalExpenditures"),
-                    DividendsPaid = TryGetVal(stmt, "dividendsPaid")
+                    DividendsPaid = TryGetVal(stmt, "dividendsPaid"),
+                    ShareRepurchases = TryGetVal(stmt, "repurchaseOfStock"),
+                    // FreeCashFlow = OperatingCashFlow + CapEx (Yahoo reports CapEx as negative)
+                    FreeCashFlow = TryGetVal(stmt, "totalCashFromOperatingActivities") is decimal ocf
+                        && TryGetVal(stmt, "capitalExpenditures") is decimal capex
+                        ? ocf + capex
+                        : null,
                 });
             }
         }

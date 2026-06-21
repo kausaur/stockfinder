@@ -1,6 +1,6 @@
 import { Outlet, NavLink, useLocation } from 'react-router-dom';
-import { refreshData } from '../services/api';
-import { useState } from 'react';
+import { refreshData, getAdminHealth } from '../services/api';
+import { useState, useEffect } from 'react';
 
 const navItems = [
   { path: '/', label: 'Dashboard', icon: '📊' },
@@ -12,7 +12,24 @@ const navItems = [
 
 export default function Layout() {
   const [refreshing, setRefreshing] = useState(false);
+  const [lastRefresh, setLastRefresh] = useState(null);
   const location = useLocation();
+
+  useEffect(() => {
+    getAdminHealth()
+      .then(r => setLastRefresh(r.data?.lastRefreshAt ? new Date(r.data.lastRefreshAt) : null))
+      .catch(() => {});
+  }, []);
+
+  const formatRelative = (date) => {
+    if (!date) return null;
+    const mins = Math.round((Date.now() - date.getTime()) / 60000);
+    if (mins < 1) return 'just now';
+    if (mins < 60) return `${mins}m ago`;
+    const hrs = Math.round(mins / 60);
+    if (hrs < 24) return `${hrs}h ago`;
+    return `${Math.round(hrs / 24)}d ago`;
+  };
 
   const handleRefresh = async () => {
     setRefreshing(true);
@@ -58,6 +75,11 @@ export default function Layout() {
               {navItems.find(n => n.path === location.pathname)?.label || 'Stock Detail'}
             </h2>
             <div className="flex items-center gap-4">
+              {lastRefresh && (
+                <span className="text-xs text-slate-500">
+                  🔄 Data: <span className="text-slate-400">{formatRelative(lastRefresh)}</span>
+                </span>
+              )}
               <span className="text-xs text-slate-500">{new Date().toLocaleDateString('en-IN', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</span>
             </div>
           </div>

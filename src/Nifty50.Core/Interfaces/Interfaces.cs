@@ -57,7 +57,8 @@ public interface ITechnicalAnalysisService
 
 public interface IFundamentalAnalysisService
 {
-    FundamentalMetric CalculateMetrics(Guid stockId, List<FinancialStatement> statements, decimal? currentPrice);
+    FundamentalMetric CalculateMetrics(Guid stockId, List<FinancialStatement> statements,
+        decimal? currentPrice, long? sharesOutstanding = null);
 }
 
 public interface IScoringProfileService
@@ -87,4 +88,9 @@ public interface IApiMonitorService
 public interface IDataRefreshService
 {
     Task RefreshAllDataAsync(CancellationToken ct = default);
+}
+
+public interface IStockMetadataService
+{
+    Task<StockMetadataDto?> FetchMetadataAsync(string symbol);
 }
