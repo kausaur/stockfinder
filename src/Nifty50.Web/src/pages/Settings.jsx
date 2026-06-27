@@ -11,6 +11,7 @@ export default function Settings() {
   const [weights, setWeights] = useState({});
   const [saving, setSaving] = useState(false);
   const [recalculating, setRecalculating] = useState(false);
+  const [selectedPresetId, setSelectedPresetId] = useState(null);
 
   const load = () => {
     Promise.all([getScoringProfiles(), getActiveProfile()])
@@ -20,6 +21,7 @@ export default function Settings() {
   useEffect(load, []);
 
   const handleSlider = (key, value) => {
+    setSelectedPresetId(null);
     const val = parseInt(value);
     const others = ['technicalWeight', 'fundamentalWeight', 'sentimentWeight', 'dividendWeight'].filter(k => k !== key);
     const remaining = 100 - val;
@@ -37,20 +39,22 @@ export default function Settings() {
   const handleSave = async () => {
     setSaving(true);
     try {
-      await updateActiveProfile(weights);
+      if (selectedPresetId) {
+        await activateProfile(selectedPresetId);
+      } else {
+        await updateActiveProfile(weights);
+      }
       setRecalculating(true);
       await recalculateAnalyses();
+      setSelectedPresetId(null);
       load();
     } catch (e) { console.error(e); }
     setSaving(false); setRecalculating(false);
   };
 
-  const handleActivate = async (id) => {
-    await activateProfile(id);
-    setRecalculating(true);
-    await recalculateAnalyses();
-    setRecalculating(false);
-    load();
+  const handlePresetSelect = (p) => {
+    setSelectedPresetId(p.id);
+    setWeights(p);
   };
 
   const handleReset = async () => { await resetProfile(); await recalculateAnalyses(); load(); };
@@ -76,11 +80,12 @@ export default function Settings() {
         <h3 className="text-sm font-semibold text-slate-300 mb-3">📋 Scoring Presets</h3>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {profiles.filter(p => p.isPreset).map(p => (
-            <div key={p.id} onClick={() => handleActivate(p.id)}
-              className={`glass-card p-5 cursor-pointer text-center transition-all ${p.isDefault ? 'ring-2 ring-blue-500 bg-blue-500/10' : 'hover:bg-slate-700/30'}`}>
+            <div key={p.id} onClick={() => handlePresetSelect(p)}
+              className={`glass-card p-5 cursor-pointer text-center transition-all ${(selectedPresetId === p.id || (!selectedPresetId && p.isDefault)) ? 'ring-2 ring-blue-500 bg-blue-500/10' : 'hover:bg-slate-700/30'}`}>
               <div className="text-3xl mb-2">{presetEmoji[p.name] || '📊'}</div>
               <div className="font-semibold text-white text-sm">{p.name}</div>
-              {p.isDefault && <span className="text-xs text-blue-400 mt-1">Active</span>}
+              {p.isDefault && <span className="text-xs text-blue-400 mt-1 block">Active</span>}
+              {selectedPresetId === p.id && !p.isDefault && <span className="text-xs text-amber-400 mt-1 block">Selected (Pending Save)</span>}
               <div className="mt-3" style={{ width: 80, height: 80, margin: '0 auto' }}>
                 <ResponsiveContainer>
                   <PieChart><Pie data={[
@@ -161,7 +166,10 @@ export default function Settings() {
             ].map(({ key, label }) => (
               <div key={key}>
                 <label className="text-xs text-slate-500">{label}</label>
-                <input type="number" min="0" max="100" value={weights[key] || 0} onChange={e => setWeights({ ...weights, [key]: parseInt(e.target.value) || 0 })}
+                <input type="number" min="0" max="100" value={weights[key] || 0} onChange={e => {
+                  setSelectedPresetId(null);
+                  setWeights({ ...weights, [key]: parseInt(e.target.value) || 0 });
+                }}
                   className="w-full bg-slate-800/50 border border-slate-700/50 rounded-lg px-3 py-2 text-sm text-white font-mono mt-1" />
               </div>
             ))}
