@@ -22,6 +22,11 @@ COPY --from=build /app/publish .
 # Render exposes the port in the PORT environment variable
 ENV ASPNETCORE_HTTP_PORTS=8080
 ENV PORT=8080
+ENV DOTNET_gcServer=0
+ENV DOTNET_GCHeapHardLimit=419430400
 EXPOSE 8080
+
+HEALTHCHECK --interval=30s --timeout=5s --start-period=30s --retries=3 \
+  CMD curl --fail http://localhost:8080/healthz || exit 1
 
 ENTRYPOINT ["dotnet", "Nifty50.Api.dll"]

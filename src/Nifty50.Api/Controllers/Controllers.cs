@@ -12,13 +12,13 @@ public class StocksController : ControllerBase
     public StocksController(IStockRepository repo) => _repo = repo;
 
     [HttpGet]
+    [ResponseCache(Duration = 60)]
     public async Task<ActionResult<List<StockListDto>>> GetAll([FromQuery] string? search, [FromQuery] string? sector)
     {
-        var stocks = await _repo.GetAllAsync(search, sector);
+        var stocksWithAnalysis = await _repo.GetAllWithAnalysisAsync(search, sector);
         var results = new List<StockListDto>();
-        foreach (var s in stocks)
+        foreach (var (s, analysis) in stocksWithAnalysis)
         {
-            var analysis = await _repo.GetLatestAnalysisAsync(s.Id);
             results.Add(new StockListDto(s.Id, s.Symbol, s.CompanyName, s.Sector, s.CurrentPrice,
                 s.DayChangePercent, s.MarketCap, analysis?.OverallSignal.ToString(), analysis?.OverallScore));
         }
@@ -43,6 +43,7 @@ public class PricesController : ControllerBase
     public PricesController(IStockRepository repo) => _repo = repo;
 
     [HttpGet("prices")]
+    [ResponseCache(Duration = 300)]
     public async Task<ActionResult<List<StockPriceDto>>> GetPrices(Guid stockId, [FromQuery] DateTime? from, [FromQuery] DateTime? to)
     {
         var prices = await _repo.GetPricesAsync(stockId, from, to);
@@ -165,6 +166,7 @@ public class AnalysisController : ControllerBase
     }
 
     [HttpGet("alerts")]
+    [ResponseCache(Duration = 60)]
     public async Task<ActionResult<List<AnalysisDto>>> GetAlerts()
     {
         var alerts = await _repo.GetAlertsAsync();
@@ -187,6 +189,7 @@ public class ScoringProfileController : ControllerBase
     public ScoringProfileController(IScoringProfileService service, IStockAnalysisEngine engine) { _service = service; _engine = engine; }
 
     [HttpGet]
+    [ResponseCache(Duration = 300)]
     public async Task<ActionResult<List<ScoringProfileDto>>> GetAll()
     {
         var profiles = await _service.GetAllProfilesAsync();
@@ -238,6 +241,7 @@ public class DashboardController : ControllerBase
     public DashboardController(IStockRepository repo) => _repo = repo;
 
     [HttpGet]
+    [ResponseCache(Duration = 120)]
     public async Task<ActionResult<DashboardDto>> Get() => Ok(await _repo.GetDashboardDataAsync());
 }
 

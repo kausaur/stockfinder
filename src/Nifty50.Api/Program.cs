@@ -23,6 +23,10 @@ builder.Services.AddCors(options =>
     });
 });
 
+builder.Services.AddMemoryCache();
+builder.Services.AddResponseCaching();
+builder.Services.AddHealthChecks();
+
 var app = builder.Build();
 
 // Apply migrations and seed presets
@@ -36,6 +40,8 @@ using (var scope = app.Services.CreateScope())
 app.UseSwagger();
 app.UseSwaggerUI();
 app.UseCors("AllowFrontend");
+app.UseResponseCaching();
+app.MapHealthChecks("/healthz");
 app.MapControllers();
 app.Run();
 

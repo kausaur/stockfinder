@@ -9,13 +9,18 @@ namespace Nifty50.Infrastructure.Services;
 
 public class ApiMonitorService : IApiMonitorService
 {
-    private static readonly ConcurrentBag<ApiCallRecord> _calls = new();
+    private static readonly ConcurrentQueue<ApiCallRecord> _calls = new();
     private static readonly DateTime _serverStartedAt = DateTime.UtcNow;
     private readonly IServiceProvider _services;
+    private const int MaxCalls = 500;
 
     public ApiMonitorService(IServiceProvider services) => _services = services;
 
-    public void RecordApiCall(ApiCallRecord record) => _calls.Add(record);
+    public void RecordApiCall(ApiCallRecord record)
+    {
+        _calls.Enqueue(record);
+        while (_calls.Count > MaxCalls && _calls.TryDequeue(out _)) { }
+    }
 
     public List<ApiCallRecord> GetRecentCalls(string? apiName, int limit = 50)
     {

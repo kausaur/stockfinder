@@ -6,6 +6,7 @@ namespace Nifty50.Core.Interfaces;
 public interface IStockRepository
 {
     Task<List<Stock>> GetAllAsync(string? search = null, string? sector = null);
+    Task<List<(Stock Stock, StockAnalysis? Analysis)>> GetAllWithAnalysisAsync(string? search = null, string? sector = null);
     Task<Stock?> GetByIdAsync(Guid id);
     Task<Stock?> GetBySymbolAsync(string symbol);
     Task<Stock> AddAsync(Stock stock);

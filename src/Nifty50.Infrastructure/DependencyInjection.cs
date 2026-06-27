@@ -15,7 +15,28 @@ public static class DependencyInjection
     {
         // Database
         services.AddDbContext<AppDbContext>(options =>
-            options.UseNpgsql(config.GetConnectionString("DefaultConnection")));
+        {
+            var connStr = config.GetConnectionString("DefaultConnection");
+            // Add connection pooling parameters if they are not present
+            if (connStr != null && !connStr.Contains("Maximum Pool Size"))
+            {
+                var builder = new Npgsql.NpgsqlConnectionStringBuilder(connStr)
+                {
+                    MaxPoolSize = 5,
+                    ConnectionIdleLifetime = 60,
+                    Timeout = 15,
+                    CommandTimeout = 30
+                };
+                connStr = builder.ToString();
+            }
+            options.UseNpgsql(connStr, npgsqlOptions => 
+            {
+                npgsqlOptions.EnableRetryOnFailure(
+                    maxRetryCount: 3,
+                    maxRetryDelay: TimeSpan.FromSeconds(5),
+                    errorCodesToAdd: null);
+            });
+        });
 
         // Repositories
         services.AddScoped<IStockRepository, StockRepository>();

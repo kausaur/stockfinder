@@ -21,6 +21,25 @@ public class StockRepository : IStockRepository
         return await q.OrderBy(s => s.Symbol).ToListAsync();
     }
 
+    public async Task<List<(Stock Stock, StockAnalysis? Analysis)>> GetAllWithAnalysisAsync(string? search = null, string? sector = null)
+    {
+        var stocksQuery = _db.Stocks.Where(s => s.IsActive).AsNoTracking();
+        if (!string.IsNullOrEmpty(search))
+            stocksQuery = stocksQuery.Where(s => s.Symbol.Contains(search) || s.CompanyName.Contains(search));
+        if (!string.IsNullOrEmpty(sector))
+            stocksQuery = stocksQuery.Where(s => s.Sector == sector);
+            
+        var query = from s in stocksQuery
+                    let latestAnalysis = _db.StockAnalyses
+                        .Where(a => a.StockId == s.Id)
+                        .OrderByDescending(a => a.AnalyzedAt)
+                        .FirstOrDefault()
+                    select new { Stock = s, Analysis = latestAnalysis };
+                    
+        var results = await query.OrderBy(x => x.Stock.Symbol).ToListAsync();
+        return results.Select(x => (x.Stock, x.Analysis)).ToList();
+    }
+
     public async Task<Stock?> GetByIdAsync(Guid id) =>
         await _db.Stocks.AsNoTracking().FirstOrDefaultAsync(s => s.Id == id);
 
@@ -50,14 +69,23 @@ public class StockRepository : IStockRepository
 
     public async Task AddPricesAsync(IEnumerable<StockPrice> prices)
     {
-        foreach (var p in prices)
+        var priceList = prices.ToList();
+        if (!priceList.Any()) return;
+        
+        var stockId = priceList.First().StockId;
+        var dates = priceList.Select(p => p.Date).ToHashSet();
+        
+        var existing = await _db.StockPrices
+            .Where(p => p.StockId == stockId && dates.Contains(p.Date))
+            .ToDictionaryAsync(p => p.Date);
+
+        foreach (var p in priceList)
         {
-            var existing = await _db.StockPrices.FirstOrDefaultAsync(x => x.StockId == p.StockId && x.Date == p.Date);
-            if (existing != null) 
+            if (existing.TryGetValue(p.Date, out var e))
             {
-                existing.Open = p.Open; existing.High = p.High; existing.Low = p.Low; 
-                existing.Close = p.Close; existing.AdjClose = p.AdjClose; existing.Volume = p.Volume;
-                _db.StockPrices.Update(existing);
+                e.Open = p.Open; e.High = p.High; e.Low = p.Low; 
+                e.Close = p.Close; e.AdjClose = p.AdjClose; e.Volume = p.Volume;
+                _db.StockPrices.Update(e);
             }
             else _db.StockPrices.Add(p);
         }
@@ -69,13 +97,22 @@ public class StockRepository : IStockRepository
 
     public async Task AddDividendsAsync(IEnumerable<Dividend> dividends)
     {
-        foreach (var d in dividends)
+        var divList = dividends.ToList();
+        if (!divList.Any()) return;
+        
+        var stockId = divList.First().StockId;
+        var dates = divList.Select(d => d.ExDate).ToHashSet();
+        
+        var existing = await _db.Dividends
+            .Where(d => d.StockId == stockId && dates.Contains(d.ExDate))
+            .ToDictionaryAsync(d => d.ExDate);
+
+        foreach (var d in divList)
         {
-            var existing = await _db.Dividends.FirstOrDefaultAsync(x => x.StockId == d.StockId && x.ExDate == d.ExDate);
-            if (existing != null) 
+            if (existing.TryGetValue(d.ExDate, out var e))
             {
-                existing.Amount = d.Amount;
-                _db.Dividends.Update(existing);
+                e.Amount = d.Amount;
+                _db.Dividends.Update(e);
             }
             else _db.Dividends.Add(d);
         }
@@ -94,13 +131,24 @@ public class StockRepository : IStockRepository
 
     public async Task AddFinancialStatementsAsync(IEnumerable<FinancialStatement> statements)
     {
-        foreach (var stmt in statements)
+        var stmtList = statements.ToList();
+        if (!stmtList.Any()) return;
+        
+        var stockId = stmtList.First().StockId;
+        var keys = stmtList.Select(s => new { s.StatementType, s.Period, s.PeriodEndDate }).ToList();
+        
+        // Load all existing statements for this stock
+        var existingStmts = await _db.FinancialStatements
+            .Where(f => f.StockId == stockId)
+            .ToListAsync();
+            
+        foreach (var stmt in stmtList)
         {
-            var existing = await _db.FinancialStatements.FirstOrDefaultAsync(f => 
-                f.StockId == stmt.StockId && 
+            var existing = existingStmts.FirstOrDefault(f => 
                 f.StatementType == stmt.StatementType && 
                 f.Period == stmt.Period && 
                 f.PeriodEndDate == stmt.PeriodEndDate);
+                
             if (existing != null)
             {
                 stmt.Id = existing.Id;
@@ -147,14 +195,23 @@ public class StockRepository : IStockRepository
 
     public async Task AddTechnicalIndicatorsAsync(IEnumerable<TechnicalIndicator> indicators)
     {
-        foreach (var i in indicators)
+        var indList = indicators.ToList();
+        if (!indList.Any()) return;
+        
+        var stockId = indList.First().StockId;
+        var dates = indList.Select(i => i.Date).ToHashSet();
+        
+        var existing = await _db.TechnicalIndicators
+            .Where(t => t.StockId == stockId && dates.Contains(t.Date))
+            .ToDictionaryAsync(t => t.Date);
+
+        foreach (var i in indList)
         {
-            var existing = await _db.TechnicalIndicators.FirstOrDefaultAsync(x => x.StockId == i.StockId && x.Date == i.Date);
-            if (existing != null) 
+            if (existing.TryGetValue(i.Date, out var e))
             {
-                i.Id = existing.Id;
-                _db.Entry(existing).CurrentValues.SetValues(i);
-                _db.Entry(existing).Property(x => x.Id).IsModified = false;
+                i.Id = e.Id;
+                _db.Entry(e).CurrentValues.SetValues(i);
+                _db.Entry(e).Property(x => x.Id).IsModified = false;
             }
             else _db.TechnicalIndicators.Add(i);
         }

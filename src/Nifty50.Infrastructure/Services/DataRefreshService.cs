@@ -160,8 +160,8 @@ public class DataRefreshService : BackgroundService, IDataRefreshService
                     await repo.AddFundamentalMetricAsync(metric);
                 }
 
-                // 7. Calculate technical indicators from stored price history
-                var allPrices = await repo.GetPricesAsync(stock.Id, null, null);
+                // 7. Calculate technical indicators from stored price history (limit to last 250 days to save memory)
+                var allPrices = await repo.GetPricesAsync(stock.Id, DateTime.UtcNow.AddDays(-250), null);
                 if (allPrices.Count >= 30)
                 {
                     var indicators = techService.CalculateIndicators(stock.Id, allPrices);
@@ -176,7 +176,13 @@ public class DataRefreshService : BackgroundService, IDataRefreshService
                 await repo.AddSentimentAsync(sentiment);
 
                 // Small delay between stocks to respect Yahoo Finance rate limits
-                await Task.Delay(500, ct);
+                await Task.Delay(1000, ct);
+                
+                // Force garbage collection every 10 stocks to keep memory footprint low on 512MB RAM
+                if (count % 10 == 0)
+                {
+                    GC.Collect();
+                }
             }
             catch (Exception ex)
             {
