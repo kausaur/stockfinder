@@ -75,7 +75,7 @@ public interface IScoringProfileService
 public interface IStockAnalysisEngine
 {
     Task<StockAnalysis> AnalyzeStockAsync(Guid stockId);
-    Task RecalculateAllAsync();
+    Task<List<StockAnalysis>> RecalculateAllAsync();
 }
 
 public interface IApiMonitorService

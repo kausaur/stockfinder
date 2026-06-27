@@ -16,6 +16,7 @@ public class AppDbContext : DbContext
     public DbSet<SentimentAnalysis> SentimentAnalyses => Set<SentimentAnalysis>();
     public DbSet<StockAnalysis> StockAnalyses => Set<StockAnalysis>();
     public DbSet<ScoringProfile> ScoringProfiles => Set<ScoringProfile>();
+    public DbSet<DeviceRegistration> DeviceRegistrations => Set<DeviceRegistration>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

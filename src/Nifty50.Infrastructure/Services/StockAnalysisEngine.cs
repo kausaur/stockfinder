@@ -72,14 +72,24 @@ public class StockAnalysisEngine : IStockAnalysisEngine
         return analysis;
     }
 
-    public async Task RecalculateAllAsync()
+    public async Task<List<StockAnalysis>> RecalculateAllAsync()
     {
+        var alerts = new List<StockAnalysis>();
         await _repo.ClearAnalysesAsync();
         var stocks = await _repo.GetAllAsync();
         foreach (var stock in stocks)
         {
-            try { await AnalyzeStockAsync(stock.Id); } catch { /* Skip failed analyses */ }
+            try 
+            { 
+                var analysis = await AnalyzeStockAsync(stock.Id); 
+                if (analysis.IsAlert)
+                {
+                    alerts.Add(analysis);
+                }
+            } 
+            catch { /* Skip failed analyses */ }
         }
+        return alerts;
     }
 
     private static int CalculateTechnicalScore(TechnicalIndicator? t, ScoringProfile p, decimal? currentPrice,

@@ -188,11 +188,15 @@ public class DataRefreshService : BackgroundService, IDataRefreshService
         try
         {
             _logger.LogInformation("Running analysis engine for all stocks...");
-            await analysisEngine.RecalculateAllAsync();
+            var newAlerts = await analysisEngine.RecalculateAllAsync();
+            
+            // 10. Send Push Notifications to mobile devices
+            var pushService = scope.ServiceProvider.GetRequiredService<PushNotificationService>();
+            await pushService.SendAlertNotificationsAsync(newAlerts);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error running analysis engine");
+            _logger.LogError(ex, "Error running analysis engine or sending notifications");
         }
     }
 }

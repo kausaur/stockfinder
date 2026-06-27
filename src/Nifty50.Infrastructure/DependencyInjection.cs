@@ -25,6 +25,7 @@ public static class DependencyInjection
         services.AddScoped<ITechnicalAnalysisService, TechnicalAnalysisService>();
         services.AddScoped<IFundamentalAnalysisService, FundamentalAnalysisService>();
         services.AddScoped<IStockAnalysisEngine, StockAnalysisEngine>();
+        services.AddScoped<PushNotificationService>();
         services.AddSingleton<IApiMonitorService, ApiMonitorService>();
 
         // HTTP clients with Polly retry

@@ -78,3 +78,5 @@ public record StockMetadataDto(
     decimal? DayChangePercent,
     decimal? CurrentPrice,
     long? SharesOutstanding);
+
+public record DeviceRegistrationDto(string ExpoPushToken, string DeviceName, string Platform);
