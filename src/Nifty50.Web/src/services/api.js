@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const api = axios.create({ baseURL: 'http://localhost:5276/api' });
+const api = axios.create({ baseURL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:5276/api' });
 
 export const getStocks = (search, sector) => api.get('/stocks', { params: { search, sector } });
 export const getStock = (id) => api.get(`/stocks/${id}`);
