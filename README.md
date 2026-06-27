@@ -1,96 +1,136 @@
 # StockFinder — Nifty50 Stock Analyzer
 
-A comprehensive, full-stack application designed to track, analyze, and score the top 50 blue-chip stocks of the Indian stock market (Nifty50). The application automatically fetches live market data, financial statements, and news sentiment from real external APIs — with **zero hardcoded or mock data** — and runs them through a customizable scoring engine to generate active Buy, Hold, and Sell signals.
-
-## 🚀 Features
-
-- **Automated Data Harvesting**: A background worker automatically pulls live metadata (sector, industry, market cap, 52-week range, day change), historical prices, dividends, and financial statements (Income, Balance Sheet, Cash Flow) from Yahoo Finance.
-- **Real Stock Metadata**: Sector, industry, market cap, 52-week high/low, and shares outstanding are all fetched from Yahoo Finance's `quoteSummary` API on every refresh cycle.
-- **Sentiment Analysis**: Leverages the GNews API to fetch recent news headlines for each stock and computes a bullish/bearish sentiment score.
-- **Technical & Fundamental Engine**: Calculates deep technical indicators (MACD, RSI, Moving Averages, Bollinger Bands) and fundamental metrics (P/E ratio, ROE, Debt-to-Equity, EPS, Book Value, Free Cash Flow per share) using real shares outstanding data.
-- **Customizable Scoring Profiles**: Define your own weightings for the analysis engine (e.g., weigh Technicals at 60% and Fundamentals at 40%) to cater to your specific trading strategy (Value, Growth, Momentum, Income).
-- **Live Dashboard**: A React frontend with dynamic candlestick charts, interactive score gauges, sortable stock list, and real-time summary of top gainers and losers.
-- **Auto Refresh**: Data refreshes automatically every 24 hours (configurable). The last-refreshed timestamp is displayed in the UI header.
+A full-stack, real-time stock analysis platform for India's Nifty 50 blue-chip index. StockFinder automatically harvests live market data from Yahoo Finance and GNews, runs it through a configurable scoring engine, and delivers actionable **Buy / Hold / Sell** signals across a web dashboard, a cross-platform mobile app, and push notifications — all powered by **zero hardcoded or mock data**.
 
 ---
 
-## 🛠️ Setup Instructions (From Scratch)
+## ✨ Highlights
 
-### Prerequisites
-- **.NET 10 SDK** or later
-- **Node.js** (v18+) and **npm**
-- **Docker Desktop** (for running the PostgreSQL database)
-- **GNews API Key** (Free tier available at [gnews.io](https://gnews.io/))
-
-### 1. Database Setup
-The backend relies on PostgreSQL. Start a local instance using Docker:
-```bash
-docker run --name stockfinder-db -e POSTGRES_PASSWORD=postgres -p 5432:5432 -d postgres
-```
-
-### 2. Configure Backend Secrets
-Navigate to the API project directory and set your GNews API key via user-secrets (keeps it safely outside source control):
-```bash
-cd f:\projects\stockfinder\src\Nifty50.Api
-dotnet user-secrets init
-dotnet user-secrets set "GNewsApiKey" "YOUR_API_KEY_HERE"
-```
-
-### 3. Start the .NET Backend
-The backend uses Entity Framework Core to automatically apply database migrations and create the schema on startup.
-```bash
-cd f:\projects\stockfinder
-dotnet run --project src\Nifty50.Api\Nifty50.Api.csproj
-```
-*Note: Upon startup, the `DataRefreshService` will automatically begin fetching 8 years of historical data for all 50 stocks. This initial population may take several minutes. After that, data auto-refreshes every 24 hours.*
-
-### 4. Start the React Frontend
-Open a new terminal to install UI dependencies and start the Vite development server:
-```bash
-cd f:\projects\stockfinder\src\Nifty50.Web
-npm install
-npm run dev
-```
-
-### 5. Access the Application
-Open your browser and navigate to: **http://localhost:5173**
+| | |
+|-|-|
+| 📊 **Live Market Data** | Prices, financials, dividends, metadata — all sourced in real time from Yahoo Finance |
+| 🧠 **Scoring Engine** | Technical (MACD, RSI, Bollinger, ADX) + Fundamental (P/E, ROE, D/E, EPS growth) + Sentiment + Dividends |
+| 🎛️ **Customizable Strategy** | Six preset profiles (Balanced, Growth, Value, Income, Momentum, Quality) or build your own weightings |
+| 📱 **Cross-Platform Mobile** | React Native / Expo app for iOS and Android with offline caching |
+| 🔔 **Push Notifications** | Instant Expo push alerts when a stock triggers a Buy or Strong Buy signal |
+| 🌐 **Web Dashboard** | Interactive charts, sortable tables, sector heatmaps, and a full admin panel |
+| ⚡ **Auto Refresh** | Background worker re-fetches everything every 24 hours (configurable) |
+| ☁️ **Free Hosting** | Runs on Render (API + Static Site) and Neon (PostgreSQL) — entirely on free tiers |
 
 ---
 
-## ⚙️ Configuration
+## 🖥️ How to Use the Web App
 
-All runtime settings live in `src/Nifty50.Api/appsettings.json`:
+### Dashboard
 
-| Setting | Default | Description |
-|---------|---------|-------------|
-| `DataRefresh:IntervalHours` | `24` | How often the background worker re-fetches all data |
-| `GNews:MaxStocksPerRefresh` | `20` | Max stocks to fetch sentiment for per refresh (GNews free tier: 100 req/day) |
-| `GNewsApiKey` | Set via user-secrets | Your GNews API key |
+The landing page gives you a bird's-eye view of the market:
+
+- **Stats bar** — Total tracked stocks and the number of active trade alerts.
+- **Top Gainers & Losers** — Sorted by daily percentage change.
+- **Recent Alerts** — The latest Buy/Strong Buy signals with per-category score breakdowns.
+- **Sector Performance** — A horizontal bar chart showing which sectors are leading or lagging.
+- **Data Freshness** — The `🔄 Data: Xh ago` indicator in the header shows when the last refresh ran. Click **Refresh Data** in the sidebar to trigger one immediately.
+
+### Stocks List
+
+Navigate to the **Stocks** tab to see all 50 constituents. The list is sorted by Overall Score by default so the strongest candidates rise to the top. You can:
+
+- **Search** by symbol or company name.
+- **Filter** by sector using the dropdown.
+- **Re-sort** by clicking any column header (Price, Change %, Market Cap, Score, Signal).
+
+### Stock Detail — Deep-Dive Analysis
+
+Click any stock to open the full analysis view:
+
+| Section | What you'll see |
+|---------|----------------|
+| **Price Chart** | Interactive candlestick chart with volume overlay and a range selector (1 W → 8 Y) |
+| **Overall Score** | A gauge showing the composite 0–100 score and the resulting signal (Strong Buy → Strong Sell) |
+| **Technical Indicators** | RSI-14, MACD histogram, SMA 50/200 crossover, Bollinger Band position, ADX trend strength |
+| **Fundamental Ratios** | P/E, P/B, ROE, ROA, Debt-to-Equity, EPS, Revenue & Earnings Growth YoY — computed from real financials with real shares outstanding |
+| **Sentiment** | Latest news headlines via GNews, a bullish/bearish score, and article count breakdown |
+| **Dividends** | Yield, payout ratio, and full dividend history |
+| **Analysis Verdict** | A human-readable reasoning paragraph explaining why each sub-score was assigned |
+
+### Scoring Profiles — Customize Your Strategy
+
+Navigate to **Settings** to switch or tune the scoring algorithm:
+
+1. **Preset Profiles** — One-click activation of curated strategies:
+   - **Balanced** — Equal emphasis across all factors
+   - **Growth** — Chases earnings & revenue momentum
+   - **Value** — Hunts for undervalued, low-debt stocks
+   - **Income** — Maximises dividend yield with sustainability checks
+   - **Momentum** — Rides strong technical trends
+   - **Quality** — Focuses on ROE, margins, and low leverage
+2. **Custom Weights** — Drag the sliders to set your own Technical / Fundamental / Sentiment / Dividend split (they always sum to 100%).
+3. **Alert Thresholds** — Define the minimum scores required for a stock to qualify as a signal.
+4. **Instant Recalculation** — Scores and signals are recalculated immediately when you save changes.
 
 ---
 
-## 📖 How to Use the App
+## 📱 How to Use the Mobile App
 
-1. **Dashboard Overview**: Gives you an immediate bird's-eye view — total stocks tracked, active signals (grouped by signal type), top gainers/losers, and sector performance heatmap.
-2. **Stock List**: Navigate to the "Stocks" tab. The list is sorted by Overall Score by default, so the strongest buy candidates appear first. You can re-sort by clicking any column header, and filter by sector using the dropdown.
-3. **Deep Dive Analysis**: Click any stock to open the detailed view:
-   - Interactive candlestick chart with volume overlay (1W to 8Y range selector)
-   - Technical Indicators: RSI, MACD, SMA, ADX, ATR
-   - Fundamental Ratios: P/E, ROE, D/E, EPS, Revenue Growth — all computed from real financial data with real shares outstanding
-   - Sentiment: Latest news headlines and bullish/bearish score
-   - Analysis Verdict: Overall score with gauges for each sub-category and a human-readable reasoning string
-4. **Customize Your Strategy**: Navigate to "Settings" to:
-   - Switch between preset profiles (Balanced, Growth, Value, Income)
-   - Tune top-level weights with interactive sliders that always sum to 100%
-   - Set alert thresholds for what qualifies as a "signal"
-   - Scores are instantly recalculated after saving
-5. **Data Freshness**: The "🔄 Data: Xh ago" indicator in the header shows when data was last refreshed. Click "Refresh Data" in the sidebar to trigger an immediate refresh (note: this counts against your GNews daily quota).
+The React Native (Expo) app mirrors the web experience with native performance and offline support:
+
+| Tab | Description |
+|-----|-------------|
+| **Home** | Dashboard with stats, top movers, latest alerts, and sector performance |
+| **Stocks** | Search and browse all 50 stocks; tap any row to open the detail view |
+| **Alerts** | Dedicated feed of the latest trade signals from the analysis engine |
+| **Settings** | Manage preferences and access the Admin panel |
+
+**Offline Mode** — The app caches every API response locally. When your device loses connectivity, an **offline banner** appears at the top and the app seamlessly serves the most recently cached data.
+
+**Push Notifications** — On first launch the app registers your device with the backend. When the daily data refresh generates a new Buy or Strong Buy alert, you'll receive a push notification. Tapping it routes you directly to that stock's detail screen.
+
+**Admin Panel** — Accessible from Settings → Admin & Scoring Profiles. From here you can trigger a manual data refresh or switch the active scoring profile on the fly.
 
 ---
 
-## 📚 Further Documentation
+## 🏗️ Architecture Overview
 
-For technical deep-dives into how the application is built, see the `docs` folder:
-- [System Architecture](docs/architecture.md)
-- [Data Refresh Flow](docs/data_refresh_flow.md)
-- [Analysis Engine Flow](docs/analysis_engine_flow.md)
+```
+┌──────────────┐    ┌──────────────────┐    ┌──────────────┐
+│  React Web   │◄──►│  .NET 10 API     │◄──►│  PostgreSQL  │
+│  (Vite)      │    │  (EF Core)       │    │  (Neon)      │
+└──────────────┘    │                  │    └──────────────┘
+                    │  Background Jobs │
+┌──────────────┐    │  ┌────────────┐  │    ┌──────────────┐
+│  Expo Mobile │◄──►│  │DataRefresh │──┼──► │ Yahoo Finance│
+│  (RN)        │    │  │Service     │  │    │ GNews API    │
+└──────────────┘    │  └────────────┘  │    └──────────────┘
+                    │         │        │
+       Push ◄───────│  PushNotification│
+                    │  Service         │
+                    └──────────────────┘
+```
+
+### Tech Stack
+
+| Layer | Technology |
+|-------|-----------|
+| Backend API | .NET 10, Entity Framework Core, PostgreSQL |
+| Web Frontend | React 18, Vite, Recharts, Vanilla CSS |
+| Mobile App | React Native, Expo SDK 56, Expo Router |
+| Data Sources | Yahoo Finance (prices, fundamentals, metadata), GNews (sentiment) |
+| Hosting | Render (Web Service + Static Site), Neon (managed PostgreSQL) |
+
+---
+
+## 📚 Documentation
+
+| Document | Description |
+|----------|-------------|
+| [Local Setup Guide](docs/SETUP.md) | Install dependencies, configure secrets, and run locally |
+| [Cloud Deployment Guide](docs/DEPLOYMENT.md) | Deploy to Render + Neon for free |
+| [System Architecture](docs/architecture.md) | Deep-dive into the application layers and data flow |
+| [Data Refresh Flow](docs/data_refresh_flow.md) | How the background worker fetches and processes data |
+| [Analysis Engine Flow](docs/analysis_engine_flow.md) | How scores and signals are calculated |
+
+---
+
+## 📄 License
+
+MIT
