@@ -124,7 +124,23 @@ export default function Settings() {
             <div style={{ width: '100%', height: 250 }}>
               <ResponsiveContainer>
                 <PieChart>
-                  <Pie data={pieData} dataKey="value" cx="50%" cy="50%" innerRadius={60} outerRadius={80} label={({ name, value }) => `${name}: ${value}%`} labelLine={true} style={{ fontSize: '12px', fill: '#94a3b8' }}>
+                  <Pie 
+                    data={pieData} 
+                    dataKey="value" 
+                    cx="50%" 
+                    cy="50%" 
+                    innerRadius={60} 
+                    outerRadius={80} 
+                    labelLine={true}
+                    label={(props) => {
+                      const { x, y, name, value, cx, fill } = props;
+                      return (
+                        <text x={x} y={y} fill={fill} textAnchor={x > cx ? 'start' : 'end'} dominantBaseline="central" fontSize="12px" fontWeight="500">
+                          {name}: {value}%
+                        </text>
+                      );
+                    }}
+                  >
                     {COLORS.map((c, i) => <Cell key={i} fill={c} />)}
                   </Pie>
                 </PieChart>
