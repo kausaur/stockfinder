@@ -89,7 +89,7 @@ export default function StockDetail() {
     const handleResize = () => chart.applyOptions({ width: chartRef.current?.clientWidth || 600 });
     window.addEventListener('resize', handleResize);
     return () => { window.removeEventListener('resize', handleResize); chart.remove(); chartInstance.current = null; };
-  }, [id, range]);
+  }, [id, range, loading]);
 
   if (loading) return <div className="flex items-center justify-center h-64"><div className="animate-spin text-4xl">⟳</div></div>;
   if (!stock) return <p className="text-slate-400">Stock not found.</p>;
