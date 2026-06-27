@@ -1,0 +1,8 @@
+.git
+.vs
+.vscode
+*/bin/
+*/obj/
+src/Nifty50.Web/node_modules/
+DbCheck/
+tests/
