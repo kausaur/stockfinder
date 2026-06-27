@@ -16,6 +16,7 @@ export default function StockDetailScreen() {
     const { data: prices, loading: loadingPrices } = useApi(() => api.getStockPrices(id), `prices_${id}`, [id]);
     const { data: tech } = useApi(() => api.getTechnical(id), `tech_${id}`, [id]);
     const { data: fund } = useApi(() => api.getFundamental(id), `fund_${id}`, [id]);
+    const { data: sentiment } = useApi(() => api.getSentiment(id), `sentiment_${id}`, [id]);
 
     const loading = loadingStock || loadingAnalysis;
 
@@ -99,6 +100,22 @@ export default function StockDetailScreen() {
                 )}
             </CollapsibleCard>
 
+            <CollapsibleCard title="Sentiment Analysis">
+                {analysis && (
+                    <View style={styles.scoreRow}>
+                        <Text style={styles.scoreText}>Sentiment Score: {analysis.sentimentScore}</Text>
+                        <SignalBadge signal={analysis.sentimentSignal} />
+                    </View>
+                )}
+                {sentiment && (
+                    <View style={styles.dataGrid}>
+                        <View style={styles.dataCol}><Text style={styles.dataLabel}>Positive</Text><Text style={[styles.dataVal, {color: colors.success}]}>{sentiment.positiveCount || 0}</Text></View>
+                        <View style={styles.dataCol}><Text style={styles.dataLabel}>Negative</Text><Text style={[styles.dataVal, {color: colors.danger}]}>{sentiment.negativeCount || 0}</Text></View>
+                        <View style={styles.dataCol}><Text style={styles.dataLabel}>Neutral</Text><Text style={styles.dataVal}>{sentiment.neutralCount || 0}</Text></View>
+                    </View>
+                )}
+            </CollapsibleCard>
+
             <View style={{ height: 40 }} />
         </ScrollView>
     );
@@ -112,6 +129,7 @@ const styles = StyleSheet.create({
     },
     center: {
         flex: 1,
+        backgroundColor: colors.background,
         justifyContent: 'center',
         alignItems: 'center',
     },

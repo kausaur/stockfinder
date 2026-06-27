@@ -1,5 +1,6 @@
 import { Tabs } from 'expo-router';
 import { colors } from '../../theme/colors';
+import { Ionicons } from '@expo/vector-icons';
 
 export default function TabLayout() {
     return (
@@ -17,6 +18,7 @@ export default function TabLayout() {
                 options={{
                     title: 'Dashboard',
                     tabBarLabel: 'Home',
+                    tabBarIcon: ({ color, size }) => <Ionicons name="home" size={size} color={color} />
                 }}
             />
             <Tabs.Screen
@@ -24,6 +26,7 @@ export default function TabLayout() {
                 options={{
                     title: 'All Stocks',
                     tabBarLabel: 'Stocks',
+                    tabBarIcon: ({ color, size }) => <Ionicons name="bar-chart" size={size} color={color} />
                 }}
             />
             <Tabs.Screen
@@ -31,6 +34,7 @@ export default function TabLayout() {
                 options={{
                     title: 'Alerts',
                     tabBarLabel: 'Alerts',
+                    tabBarIcon: ({ color, size }) => <Ionicons name="notifications" size={size} color={color} />
                 }}
             />
             <Tabs.Screen
@@ -38,6 +42,7 @@ export default function TabLayout() {
                 options={{
                     title: 'Settings',
                     tabBarLabel: 'Settings',
+                    tabBarIcon: ({ color, size }) => <Ionicons name="settings" size={size} color={color} />
                 }}
             />
         </Tabs>

@@ -62,8 +62,8 @@ export default function DashboardScreen() {
 
             <View style={styles.section}>
                 <Text style={styles.sectionTitle}>Recent Alerts</Text>
-                {data?.latestAlerts?.slice(0, 3).map(alert => (
-                    <AlertRow key={alert.stockId} alert={alert} onPress={() => router.push(`/stock/${alert.stockId}`)} />
+                {data?.latestAlerts?.slice(0, 3).map((alert, index) => (
+                    <AlertRow key={`${alert.stockId}-${index}`} alert={alert} onPress={() => router.push(`/stock/${alert.stockId}`)} />
                 ))}
             </View>
 
@@ -82,10 +82,12 @@ export default function DashboardScreen() {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
+        backgroundColor: colors.background,
         padding: 16,
     },
     center: {
         flex: 1,
+        backgroundColor: colors.background,
         justifyContent: 'center',
         alignItems: 'center',
     },

@@ -10,15 +10,19 @@ export default function AdminScreen() {
     const { data: profiles, loading: loadingProfiles, refetch: refetchProfiles } = useApi(api.getScoringProfiles, 'scoring_profiles');
     const { data: activeProfile, refetch: refetchActive } = useApi(api.getActiveProfile, 'active_profile');
     const [refreshing, setRefreshing] = useState(false);
+    const [activating, setActivating] = useState(false);
 
     const handleActivateProfile = async (id) => {
         try {
+            setActivating(true);
             await api.activateProfile(id);
             Alert.alert('Success', 'Profile activated successfully');
             await refetchActive();
             await refetchProfiles();
         } catch (error) {
             Alert.alert('Error', 'Failed to activate profile');
+        } finally {
+            setActivating(false);
         }
     };
 
@@ -34,10 +38,11 @@ export default function AdminScreen() {
         }
     };
 
-    if (loadingProfiles) {
+    if (loadingProfiles || activating) {
         return (
             <View style={styles.center}>
                 <ActivityIndicator size="large" color={colors.primary} />
+                {activating && <Text style={{marginTop: 16, color: colors.textSecondary}}>Activating profile...</Text>}
             </View>
         );
     }
