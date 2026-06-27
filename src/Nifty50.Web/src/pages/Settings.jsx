@@ -120,12 +120,14 @@ export default function Settings() {
               Sum: {(weights.technicalWeight || 0) + (weights.fundamentalWeight || 0) + (weights.sentimentWeight || 0) + (weights.dividendWeight || 0)}%
             </div>
           </div>
-          <div className="flex items-center justify-center">
-            <div style={{ width: 200, height: 200 }}>
+          <div className="flex items-center justify-center w-full">
+            <div style={{ width: '100%', height: 250 }}>
               <ResponsiveContainer>
-                <PieChart><Pie data={pieData} dataKey="value" cx="50%" cy="50%" innerRadius={50} outerRadius={80} label={({ name, value }) => `${name}: ${value}%`}>
-                  {COLORS.map((c, i) => <Cell key={i} fill={c} />)}
-                </Pie></PieChart>
+                <PieChart>
+                  <Pie data={pieData} dataKey="value" cx="50%" cy="50%" innerRadius={60} outerRadius={80} label={({ name, value }) => `${name}: ${value}%`} labelLine={true} style={{ fontSize: '12px', fill: '#94a3b8' }}>
+                    {COLORS.map((c, i) => <Cell key={i} fill={c} />)}
+                  </Pie>
+                </PieChart>
               </ResponsiveContainer>
             </div>
           </div>
