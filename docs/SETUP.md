@@ -98,8 +98,35 @@ All runtime settings live in `src/Nifty50.Api/appsettings.json`:
 | Setting | Default | Description |
 |---------|---------|-------------|
 | `DataRefresh:IntervalHours` | `24` | Hours between automatic data refresh cycles |
+| `DataRefresh:SkipIfRecentHours` | `12` | Skip refresh on startup if data was updated within this many hours (prevents wasting API quotas on Render free tier cold starts) |
 | `GNews:MaxStocksPerRefresh` | `20` | Max stocks to fetch sentiment for per cycle (GNews free tier = 100 req/day) |
 | `GNewsApiKey` | *(user-secrets)* | Your GNews API key |
+
+---
+
+## Keep-Alive for Render Free Tier
+
+Render free instances spin down after ~15 minutes of inactivity, causing 30-60s cold starts. To keep your API permanently awake, set up a free external pinger:
+
+### Option A: cron-job.org (Recommended)
+
+1. Go to [cron-job.org](https://cron-job.org) and create a free account.
+2. Create a new cron job:
+   - **URL**: `https://YOUR-APP.onrender.com/healthz`
+   - **Schedule**: Every 14 minutes
+   - **Request method**: GET
+3. Save. Your instance will now stay awake 24/7.
+
+### Option B: UptimeRobot
+
+1. Go to [UptimeRobot](https://uptimerobot.com) and create a free account.
+2. Add a new monitor:
+   - **Monitor Type**: HTTP(s)
+   - **URL**: `https://YOUR-APP.onrender.com/healthz`
+   - **Monitoring Interval**: 5 minutes
+3. Save. This also gives you uptime alerts if the service goes down.
+
+> **Note:** The `DataRefreshService` includes a smart skip — even if the instance restarts unexpectedly, it will not waste API quotas re-fetching data that was refreshed within the last 12 hours.
 
 ---
 

@@ -2,6 +2,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Configuration;
+using Microsoft.EntityFrameworkCore;
 using Nifty50.Core.Entities;
 using Nifty50.Core.Interfaces;
 
@@ -54,19 +55,45 @@ public class DataRefreshService : BackgroundService, IDataRefreshService
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
         // Wait for app to fully start
-        await Task.Delay(3000, stoppingToken);
+        await Task.Delay(5000, stoppingToken);
 
         while (!stoppingToken.IsCancellationRequested)
         {
-            _logger.LogInformation("Starting Nifty50 data refresh...");
+            // On Render free tier, the instance spins down after ~15 min of inactivity.
+            // Every cold start re-runs this loop, so check if a recent refresh already exists
+            // to avoid burning Yahoo/GNews API quotas on every wake-up.
+            var skipRefresh = false;
+            var skipHours = _config.GetValue<double>("DataRefresh:SkipIfRecentHours", 12.0);
             try
             {
-                await RefreshAllDataAsync(stoppingToken);
-                _logger.LogInformation("Data refresh completed successfully.");
+                using var checkScope = _services.CreateScope();
+                var checkDb = checkScope.ServiceProvider.GetRequiredService<Nifty50.Infrastructure.Data.AppDbContext>();
+                var lastRefresh = await checkDb.StockPrices.MaxAsync(p => (DateTime?)p.UpdatedAt, stoppingToken);
+                if (lastRefresh.HasValue && DateTime.UtcNow - lastRefresh.Value < TimeSpan.FromHours(skipHours))
+                {
+                    skipRefresh = true;
+                    _logger.LogInformation(
+                        "Skipping data refresh — last refresh was {Ago:F1} hours ago (threshold: {Threshold}h).",
+                        (DateTime.UtcNow - lastRefresh.Value).TotalHours, skipHours);
+                }
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Unhandled error during data refresh.");
+                _logger.LogWarning(ex, "Could not check last refresh time, proceeding with refresh.");
+            }
+
+            if (!skipRefresh)
+            {
+                _logger.LogInformation("Starting Nifty50 data refresh...");
+                try
+                {
+                    await RefreshAllDataAsync(stoppingToken);
+                    _logger.LogInformation("Data refresh completed successfully.");
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Unhandled error during data refresh.");
+                }
             }
 
             var intervalHours = _config.GetValue<double>("DataRefresh:IntervalHours", 24.0);
