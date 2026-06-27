@@ -143,9 +143,9 @@ public static class SeedData
                 TechBollingerWeight = 15, TechADXWeight = 10, TechVolumeWeight = 5,
                 FundValuationWeight = 25, FundProfitabilityWeight = 30,
                 FundLiquidityWeight = 15, FundLeverageWeight = 15, FundGrowthWeight = 15,
-                AlertMinOverallScore = 65, AlertMinTechnicalScore = 50,
-                AlertMinFundamentalScore = 55, AlertMinSentimentScore = 40,
-                StrongBuyThreshold = 75, BuyThreshold = 60, HoldThreshold = 42, SellThreshold = 28,
+                AlertMinOverallScore = 60, AlertMinTechnicalScore = 0,
+                AlertMinFundamentalScore = 0, AlertMinSentimentScore = 0,
+                StrongBuyThreshold = 75, BuyThreshold = 60, HoldThreshold = 40, SellThreshold = 20,
             },
             // Growth: chases earnings & revenue momentum, tolerates premium valuations
             new ScoringProfile
@@ -156,9 +156,9 @@ public static class SeedData
                 TechBollingerWeight = 10, TechADXWeight = 15, TechVolumeWeight = 5,
                 FundValuationWeight = 10, FundProfitabilityWeight = 25,
                 FundLiquidityWeight = 10, FundLeverageWeight = 10, FundGrowthWeight = 45,
-                AlertMinOverallScore = 62, AlertMinTechnicalScore = 45,
-                AlertMinFundamentalScore = 60, AlertMinSentimentScore = 40,
-                StrongBuyThreshold = 72, BuyThreshold = 58, HoldThreshold = 40, SellThreshold = 25,
+                AlertMinOverallScore = 62, AlertMinTechnicalScore = 0,
+                AlertMinFundamentalScore = 0, AlertMinSentimentScore = 0,
+                StrongBuyThreshold = 75, BuyThreshold = 60, HoldThreshold = 45, SellThreshold = 30,
             },
             // Value: hunts for undervalued stocks with strong balance sheets
             new ScoringProfile

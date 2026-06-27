@@ -41,10 +41,12 @@ public class StockAnalysisEngine : IStockAnalysisEngine
         int overallScore = Math.Clamp((int)overall, 0, 100);
 
         var overallSignal = GetSignal(overallScore, profile);
-        // Alert fires if overall score passes the threshold OR if any two category scores are exceptionally high
+        // An alert fires if the stock meets ALL of the user-defined minimum thresholds.
+        // If a threshold is set to 0, it essentially disables that specific filter.
         bool isAlert = overallScore >= profile.AlertMinOverallScore
                     && techScore >= profile.AlertMinTechnicalScore
-                    && fundScore >= profile.AlertMinFundamentalScore;
+                    && fundScore >= profile.AlertMinFundamentalScore
+                    && sentScore >= profile.AlertMinSentimentScore;
 
         var reasoning = GenerateReasoning(stock?.CompanyName ?? "", techScore, fundScore, sentScore, divScore, overallSignal, tech, fund, sent);
 
