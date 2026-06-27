@@ -129,8 +129,8 @@ export default function Settings() {
                     dataKey="value" 
                     cx="50%" 
                     cy="50%" 
-                    innerRadius={60} 
-                    outerRadius={80} 
+                    innerRadius="50%" 
+                    outerRadius="70%" 
                     labelLine={true}
                     label={(props) => {
                       const { x, y, name, value, cx, fill } = props;
