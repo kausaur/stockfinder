@@ -74,7 +74,7 @@ export default function Settings() {
       {/* Presets */}
       <div>
         <h3 className="text-sm font-semibold text-slate-300 mb-3">📋 Scoring Presets</h3>
-        <div className="grid grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {profiles.filter(p => p.isPreset).map(p => (
             <div key={p.id} onClick={() => handleActivate(p.id)}
               className={`glass-card p-5 cursor-pointer text-center transition-all ${p.isDefault ? 'ring-2 ring-blue-500 bg-blue-500/10' : 'hover:bg-slate-700/30'}`}>
@@ -99,7 +99,7 @@ export default function Settings() {
       {/* Custom Weights */}
       <div className="glass-card p-6">
         <h3 className="text-sm font-semibold text-slate-300 mb-4">🎛️ Custom Weight Sliders</h3>
-        <div className="grid grid-cols-2 gap-8">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           <div className="space-y-5">
             {[
               { key: 'technicalWeight', label: 'Technical', color: '#3b82f6', icon: '📉' },
@@ -134,7 +134,7 @@ export default function Settings() {
         {/* Alert Thresholds */}
         <div className="mt-6 pt-6 border-t border-slate-700/50">
           <h4 className="text-sm font-semibold text-slate-300 mb-3">🚨 Alert Thresholds</h4>
-          <div className="grid grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             {[
               { key: 'alertMinOverallScore', label: 'Min Overall' },
               { key: 'alertMinTechnicalScore', label: 'Min Technical' },
@@ -150,7 +150,7 @@ export default function Settings() {
           </div>
         </div>
 
-        <div className="flex gap-3 mt-6">
+        <div className="flex flex-col sm:flex-row gap-3 mt-6">
           <button onClick={handleSave} disabled={saving} className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-blue-600 to-blue-500 text-white text-sm font-medium hover:from-blue-500 hover:to-blue-400 transition-all disabled:opacity-50">
             {saving ? 'Saving...' : '💾 Save & Apply'}
           </button>

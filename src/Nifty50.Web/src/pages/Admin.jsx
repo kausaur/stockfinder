@@ -26,7 +26,7 @@ export default function Admin() {
 
       {/* Server Info */}
       {health && (
-        <div className="grid grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <div className="glass-card p-4">
             <div className="text-xs text-slate-500">Server Started</div>
             <div className="text-sm font-mono text-white">{new Date(health.serverStartedAt).toLocaleString()}</div>
@@ -43,7 +43,7 @@ export default function Admin() {
       )}
 
       {/* API Health Cards */}
-      <div className="grid grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         {(health?.apiHealth || []).map((api, i) => {
           const successRate = api.totalCalls > 0 ? ((api.successCount / api.totalCalls) * 100).toFixed(1) : 0;
           return (
@@ -70,9 +70,9 @@ export default function Admin() {
 
       {/* Recent API Calls */}
       <div className="glass-card p-5">
-        <div className="flex items-center justify-between mb-4">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-4 gap-4">
           <h4 className="text-sm font-semibold text-slate-300">📋 Recent API Calls</h4>
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
             {['', 'YahooFinance', 'YahooFundamentals', 'GNews'].map(f => (
               <button key={f} onClick={() => setFilter(f)}
                 className={`px-3 py-1 rounded-lg text-xs ${filter === f ? 'bg-blue-500 text-white' : 'bg-slate-800/50 text-slate-400 hover:bg-slate-700'}`}>

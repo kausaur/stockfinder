@@ -52,7 +52,7 @@ export default function Dashboard() {
       )}
 
       {/* Stats */}
-      <div className="grid grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {[
           { label: 'Total Stocks', value: data.totalStocks, icon: '📊', color: 'blue' },
           { label: 'Active Alerts', value: data.alertCount, icon: '🚨', color: 'amber' },
@@ -68,7 +68,7 @@ export default function Dashboard() {
       </div>
 
       {/* Gainers & Losers */}
-      <div className="grid grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {[{ title: '🟢 Top Gainers', items: data.topGainers, isGain: true }, { title: '🔴 Top Losers', items: data.topLosers, isGain: false }].map(({ title, items, isGain }) => (
           <div key={title} className="glass-card p-5">
             <h3 className="text-sm font-semibold text-slate-300 mb-4">{title}</h3>
@@ -91,7 +91,7 @@ export default function Dashboard() {
       {data.sectorPerformance?.length > 0 && (
         <div className="glass-card p-5">
           <h3 className="text-sm font-semibold text-slate-300 mb-4">📈 Sector Performance</h3>
-          <div className="grid grid-cols-4 gap-3">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
             {data.sectorPerformance.map((s, i) => (
               <div key={i} className={`p-3 rounded-lg text-center ${s.averageChangePercent >= 0 ? 'bg-emerald-500/10 border border-emerald-500/20' : 'bg-red-500/10 border border-red-500/20'}`}>
                 <div className="text-xs text-slate-400">{s.sector}</div>

@@ -135,10 +135,10 @@ export default function StockDetail() {
             <h3 className="text-lg font-bold text-white">Analysis Verdict</h3>
             {profile && <span className="text-xs px-2 py-1 bg-blue-500/20 text-blue-400 rounded-full">Using: {profile.name}</span>}
           </div>
-          <div className="grid grid-cols-6 gap-6 items-center">
+          <div className="grid grid-cols-1 md:grid-cols-6 gap-6 items-center">
             <div className="col-span-1 text-center"><SignalBadge signal={analysis.overallSignal} large /></div>
             <div className="col-span-1"><ScoreGauge score={analysis.overallScore} label="Overall" color="#3b82f6" /></div>
-            <div className="col-span-4 grid grid-cols-4 gap-3">
+            <div className="col-span-1 md:col-span-4 grid grid-cols-2 sm:grid-cols-4 gap-3">
               <ScoreGauge score={analysis.technicalScore} label="Technical" color="#10b981" />
               <ScoreGauge score={analysis.fundamentalScore} label="Fundamental" color="#8b5cf6" />
               <ScoreGauge score={analysis.sentimentScore} label="Sentiment" color="#f59e0b" />
@@ -149,7 +149,7 @@ export default function StockDetail() {
         </div>
       )}
 
-      <div className="grid grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Technical Panel */}
         <div className="glass-card p-5">
           <h3 className="text-sm font-semibold text-slate-300 mb-4">📉 Technical Indicators</h3>
@@ -200,12 +200,12 @@ export default function StockDetail() {
         <h3 className="text-sm font-semibold text-slate-300 mb-4">🗞️ Sentiment Analysis</h3>
         {sentiment ? (
           <div>
-            <div className="flex items-center gap-6 mb-4">
-              <div className={`text-3xl font-bold ${sentiment.sentimentScore > 0.1 ? 'text-emerald-400' : sentiment.sentimentScore < -0.1 ? 'text-red-400' : 'text-slate-400'}`}>
+            <div className="flex flex-col md:flex-row items-start md:items-center gap-4 md:gap-6 mb-4">
+              <div className={`text-2xl md:text-3xl font-bold ${sentiment.sentimentScore > 0.1 ? 'text-emerald-400' : sentiment.sentimentScore < -0.1 ? 'text-red-400' : 'text-slate-400'}`}>
                 {sentiment.sentimentScore > 0.1 ? '😊' : sentiment.sentimentScore < -0.1 ? '😟' : '😐'} {sentiment.overallSentiment}
               </div>
               <div className="text-sm text-slate-400">Score: <span className="font-mono font-bold text-white">{sentiment.sentimentScore.toFixed(2)}</span></div>
-              <div className="flex gap-3 text-xs">
+              <div className="flex flex-wrap gap-3 text-xs">
                 <span className="text-emerald-400">✅ {sentiment.positiveCount} positive</span>
                 <span className="text-red-400">❌ {sentiment.negativeCount} negative</span>
                 <span className="text-slate-500">• {sentiment.neutralCount} neutral</span>

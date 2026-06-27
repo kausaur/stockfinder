@@ -38,16 +38,16 @@ export default function Layout() {
   };
 
   return (
-    <div className="min-h-screen bg-[#0f172a] flex">
-      {/* Sidebar */}
-      <aside className="w-64 bg-[#1e293b]/80 backdrop-blur-xl border-r border-slate-700/50 flex flex-col fixed h-full z-10">
+    <div className="min-h-screen bg-[#0f172a] flex flex-col md:flex-row pb-16 md:pb-0">
+      {/* Desktop Sidebar */}
+      <aside className="hidden md:flex w-64 bg-[#1e293b]/80 backdrop-blur-xl border-r border-slate-700/50 flex-col fixed h-full z-10">
         <div className="p-6 border-b border-slate-700/50">
           <h1 className="text-xl font-bold bg-gradient-to-r from-blue-400 to-emerald-400 bg-clip-text text-transparent">
             📈 Nifty50 Analyzer
           </h1>
           <p className="text-xs text-slate-500 mt-1">Stock Intelligence Platform</p>
         </div>
-        <nav className="flex-1 p-4 space-y-1">
+        <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
           {navItems.map(item => (
             <NavLink key={item.path} to={item.path}
               className={({ isActive }) =>
@@ -67,24 +67,44 @@ export default function Layout() {
         </div>
       </aside>
 
+      {/* Mobile Bottom Navigation */}
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-[#1e293b]/95 backdrop-blur-xl border-t border-slate-700/50 z-50 flex justify-around items-center h-16 pb-safe">
+        {navItems.map(item => (
+          <NavLink key={item.path} to={item.path}
+            className={({ isActive }) =>
+              `flex flex-col items-center justify-center w-full h-full space-y-1 transition-colors ${
+                isActive ? 'text-blue-400' : 'text-slate-400 hover:text-slate-200'
+              }`
+            }>
+            <span className="text-xl">{item.icon}</span>
+            <span className="text-[10px] font-medium leading-none">{item.label}</span>
+          </NavLink>
+        ))}
+      </nav>
+
       {/* Main content */}
-      <main className="flex-1 ml-64">
-        <header className="sticky top-0 z-20 bg-[#0f172a]/80 backdrop-blur-xl border-b border-slate-700/50 px-8 py-4">
+      <main className="flex-1 md:ml-64 w-full">
+        <header className="sticky top-0 z-20 bg-[#0f172a]/80 backdrop-blur-xl border-b border-slate-700/50 px-4 md:px-8 py-4">
           <div className="flex items-center justify-between">
-            <h2 className="text-lg font-semibold text-slate-200">
+            <h2 className="text-lg font-semibold text-slate-200 truncate pr-2">
+              <span className="md:hidden mr-2">📈</span>
               {navItems.find(n => n.path === location.pathname)?.label || 'Stock Detail'}
             </h2>
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2 md:gap-4 flex-shrink-0">
               {lastRefresh && (
-                <span className="text-xs text-slate-500">
+                <span className="text-xs text-slate-500 hidden sm:inline-block">
                   🔄 Data: <span className="text-slate-400">{formatRelative(lastRefresh)}</span>
                 </span>
               )}
-              <span className="text-xs text-slate-500">{new Date().toLocaleDateString('en-IN', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</span>
+              <span className="text-xs text-slate-500 hidden md:inline-block">{new Date().toLocaleDateString('en-IN', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</span>
+              <button onClick={handleRefresh} disabled={refreshing}
+                className="md:hidden bg-blue-600/20 text-blue-400 p-2 rounded-lg text-xs font-medium hover:bg-blue-600/30 flex items-center justify-center">
+                {refreshing ? <span className="animate-spin">⟳</span> : '🔄'}
+              </button>
             </div>
           </div>
         </header>
-        <div className="p-8 animate-fade-in">
+        <div className="p-4 md:p-8 animate-fade-in max-w-full overflow-x-hidden">
           <Outlet />
         </div>
       </main>

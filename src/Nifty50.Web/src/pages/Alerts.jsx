@@ -21,8 +21,8 @@ export default function Alerts() {
         <p className="text-sm text-slate-400 mt-1">Stocks meeting all alert thresholds based on your active scoring profile.</p>
       </div>
 
-      <div className="glass-card overflow-hidden">
-        <table className="w-full text-sm">
+      <div className="glass-card overflow-x-auto">
+        <table className="w-full text-sm min-w-[800px]">
           <thead><tr className="border-b border-slate-700/50">
             {['Stock', 'Signal', 'Overall', 'Technical', 'Fundamental', 'Sentiment', 'Dividend', 'Reasoning'].map(h => (
               <th key={h} className="text-left px-4 py-3 text-xs text-slate-500 uppercase tracking-wider font-medium">{h}</th>

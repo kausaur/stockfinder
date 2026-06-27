@@ -72,8 +72,8 @@ export default function StockList() {
         <span className="text-sm text-slate-500">{filtered.length} stocks</span>
       </div>
 
-      <div className="glass-card overflow-hidden">
-        <table className="w-full text-sm">
+      <div className="glass-card overflow-x-auto">
+        <table className="w-full text-sm min-w-[800px]">
           <thead>
             <tr className="border-b border-slate-700/50">
               <SortHeader label="Symbol" sortId="symbol" />
