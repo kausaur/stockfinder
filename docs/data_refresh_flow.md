@@ -59,6 +59,10 @@ sequenceDiagram
     %% Analysis phase
     Worker->>Engine: RecalculateAllAsync()
     Engine-->>Worker: Done
+    
+    %% Notifications
+    Worker->>Worker: Check for new Alerts
+    Worker->>Expo: Send Push Notifications for Buy/Strong Buy
 ```
 
 ## Upsert Strategy

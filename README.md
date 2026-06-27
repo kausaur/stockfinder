@@ -93,7 +93,7 @@ The React Native (Expo) app mirrors the web experience with native performance a
 
 ```
 ┌──────────────┐    ┌──────────────────┐    ┌──────────────┐
-│  React Web   │◄──►│  .NET 10 API     │◄──►│  PostgreSQL  │
+│  React Web   │◄──►│  .NET 8 API      │◄──►│  PostgreSQL  │
 │  (Vite)      │    │  (EF Core)       │    │  (Neon)      │
 └──────────────┘    │                  │    └──────────────┘
                     │  Background Jobs │
@@ -111,9 +111,9 @@ The React Native (Expo) app mirrors the web experience with native performance a
 
 | Layer | Technology |
 |-------|-----------|
-| Backend API | .NET 10, Entity Framework Core, PostgreSQL |
+| Backend API | .NET 8, Entity Framework Core, PostgreSQL |
 | Web Frontend | React 18, Vite, Recharts, Vanilla CSS |
-| Mobile App | React Native, Expo SDK 56, Expo Router |
+| Mobile App | React Native, Expo SDK 54, Expo Router |
 | Data Sources | Yahoo Finance (prices, fundamentals, metadata), GNews (sentiment) |
 | Hosting | Render (Web Service + Static Site), Neon (managed PostgreSQL) |
 

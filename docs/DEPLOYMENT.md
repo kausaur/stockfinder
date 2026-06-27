@@ -2,9 +2,10 @@
 
 This guide walks through deploying the Nifty50 Stock Finder application to production for free using **Render** and **Neon**.
 
-The application is split into two components that must be deployed separately:
+The application is split into three components that must be deployed separately:
 1. **.NET Backend API** (Docker Service)
 2. **React Web UI** (Static Site)
+3. **Mobile App** (APK via Expo EAS)
 
 ---
 
@@ -19,7 +20,7 @@ Before deploying the API, you need a PostgreSQL database.
 ---
 
 ## 2. Deploying the Backend API (Render)
-The backend is a .NET 10 API. We deploy it on Render using a Docker container.
+The backend is a .NET 8 API. We deploy it on Render using a Docker container.
 
 1. Go to your [Render Dashboard](https://dashboard.render.com/) and click **New > Web Service**.
 2. Connect your GitHub repository (`stockfinder`).
@@ -62,3 +63,14 @@ The frontend is a React application built with Vite. We deploy this on Render as
 Render will install the dependencies, build the React app, and serve the `dist` folder. 
 
 🎉 **You're all set!** Visit your new UI URL to see your live Stock Finder application!
+
+---
+
+## 4. Deploying the Mobile App (EAS)
+To distribute the mobile app to Android users, build a standalone `.apk` using Expo Application Services (EAS):
+
+1. Install the EAS CLI: `npm install -g eas-cli`
+2. Login to Expo: `eas login`
+3. Navigate to the mobile app folder: `cd src/Nifty50.Mobile`
+4. Build for Android: `eas build -p android --profile preview`
+5. Once the build completes, EAS will provide a link to download the `.apk` file, which you can share directly with users.

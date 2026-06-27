@@ -8,7 +8,7 @@ Get the Nifty50 Stock Finder running on your machine from scratch.
 
 | Tool | Version | Purpose |
 |------|---------|---------|
-| **.NET SDK** | 10+ | Backend API |
+| **.NET SDK** | 8+ | Backend API |
 | **Node.js** | 18+ (with npm) | Web & Mobile frontends |
 | **Docker Desktop** | Latest | Local PostgreSQL database |
 | **GNews API Key** | Free tier | Sentiment analysis ([gnews.io](https://gnews.io/)) |

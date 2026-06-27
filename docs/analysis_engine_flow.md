@@ -56,6 +56,9 @@ graph TD
     
     SaveAlert --> DB[(PostgreSQL: StockAnalyses)]
     SaveNormal --> DB
+    
+    SaveAlert --> Push[PushNotificationService]
+    Push -.->|Expo API| MobileDevice[User's Mobile Phone]
 ```
 
 ## Scoring Profiles

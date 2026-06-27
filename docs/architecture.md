@@ -6,9 +6,10 @@ The Nifty50 Stock Analyzer is built using a modern decoupled architecture. The b
 
 ```mermaid
 graph TD
-    subgraph Frontend [React Web Application]
-        UI[User Interface] --> API_Client[Axios API Client]
+    subgraph Frontend [Client Applications]
+        UI[React Web Application] --> API_Client[Axios API Client]
         API_Client --> Charts[Lightweight Charts & Recharts]
+        Mobile[React Native Mobile App] --> API_Client
     end
 
     subgraph Backend [.NET 8 Web API]
@@ -41,7 +42,7 @@ graph TD
 
 ## Component Details
 
-1. **Frontend**: Built with React, it features a responsive dashboard. It polls the backend API to retrieve stock prices, historical metrics, and sentiment analysis.
-2. **Backend Controllers**: Exposes a clean RESTful API (`/api/stocks`, `/api/dashboard`, `/api/scoring-profiles`) consumed by the frontend.
+1. **Frontend Applications**: Built with React (Web) and React Native (Mobile), providing responsive dashboards. They poll the backend API to retrieve stock prices, historical metrics, and sentiment analysis.
+2. **Backend Controllers**: Exposes a clean RESTful API (`/api/stocks`, `/api/dashboard`, `/api/scoring-profiles`) consumed by the frontends.
 3. **Background Worker**: The `DataRefreshService` is an `IHostedService` that runs continuously in the background (on a configurable interval, e.g. every 24 hours), ensuring the database is always up to date with the latest market data without blocking the main API threads.
 4. **Data Services**: Handlers like `YahooFinanceService`, `YahooMetadataService`, and `GNewsSentimentService` manage HTTP requests, API rate limits, and custom Cookie/Crumb extraction to interface with third-party providers. The metadata service ensures critical fields like Market Cap, Sector, and Shares Outstanding are always populated.
