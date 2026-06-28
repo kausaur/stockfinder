@@ -45,7 +45,11 @@ public static class DependencyInjection
         services.AddScoped<IScoringProfileService, ScoringProfileService>();
         services.AddScoped<ITechnicalAnalysisService, TechnicalAnalysisService>();
         services.AddScoped<IFundamentalAnalysisService, FundamentalAnalysisService>();
+        services.AddScoped<ISectorRelativeService, SectorRelativeService>();
+        services.AddScoped<IIntrinsicValueService, IntrinsicValueService>();
+        services.AddScoped<IQualityAssessmentService, QualityAssessmentService>();
         services.AddScoped<IStockAnalysisEngine, StockAnalysisEngine>();
+        services.AddScoped<IRecommendationService, RecommendationService>();
         services.AddScoped<PushNotificationService>();
         services.AddSingleton<IApiMonitorService, ApiMonitorService>();
 

@@ -12,11 +12,16 @@ public class StockAnalysis : BaseEntity
     public SignalType FundamentalSignal { get; set; }
     public SignalType SentimentSignal { get; set; }
     public SignalType OverallSignal { get; set; }
+    public SignalType? ValuationSignal { get; set; }
+    public SignalType? QualitySignal { get; set; }
 
+    // Component Scores (0-100)
     public int TechnicalScore { get; set; }
     public int FundamentalScore { get; set; }
     public int SentimentScore { get; set; }
     public int DividendScore { get; set; }
+    public int? ValuationScore { get; set; }
+    public int? QualityScore { get; set; }
     public int OverallScore { get; set; }
 
     /// <summary>JSON snapshot of weights at analysis time</summary>

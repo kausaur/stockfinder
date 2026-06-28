@@ -33,6 +33,13 @@ public interface IStockRepository
     Task ClearAnalysesAsync();
     Task<DashboardDto> GetDashboardDataAsync();
     Task SaveChangesAsync();
+    Task<SectorBenchmark?> GetSectorBenchmarkAsync(string sector);
+    Task AddScoreHistoryAsync(ScoreHistory history);
+    Task<IntrinsicValuation?> GetLatestValuationAsync(Guid stockId);
+    Task<QualityMetric?> GetLatestQualityAsync(Guid stockId);
+    Task UpsertQualityMetricAsync(QualityMetric metric);
+    Task<List<ScoreHistory>> GetScoreHistoryAsync(Guid stockId, int limit = 100);
+    Task<List<IndexMembership>> GetIndexMembershipsAsync(string indexName);
 }
 
 public interface IStockDataService
@@ -94,4 +101,29 @@ public interface IDataRefreshService
 public interface IStockMetadataService
 {
     Task<StockMetadataDto?> FetchMetadataAsync(string symbol);
+}
+
+public interface ISectorRelativeService
+{
+    Task<SectorBenchmark?> GetBenchmarkAsync(string? sector);
+    bool IsBFSI(string? sector);
+    double ScoreRelativePE(decimal? stockPE, SectorBenchmark? benchmark);
+    double ScoreRelativeROE(decimal? stockROE, SectorBenchmark? benchmark);
+}
+
+public interface IIntrinsicValueService
+{
+    IntrinsicValuation CalculateIntrinsicValue(Guid stockId, decimal currentPrice, FundamentalMetric metric);
+}
+
+public interface IQualityAssessmentService
+{
+    QualityMetric AssessQuality(Guid stockId, List<FinancialStatement> statements, FundamentalMetric metric, QualityMetric? existingCuratedData);
+}
+
+public interface IRecommendationService
+{
+    Task<RecommendationDashboardDto> GetDashboardAsync();
+    Task<List<StockRecommendationDto>> ScreenStocksAsync(ScreenerFilters filters);
+    Task<List<PeerComparisonDto>> GetPeersAsync(Guid stockId);
 }

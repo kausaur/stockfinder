@@ -1,0 +1,100 @@
+[
+  {
+    "Sector": "Information Technology",
+    "MedianPE": 32.5,
+    "MedianROE": 28.0,
+    "TypicalDebtToEquity": 0.08,
+    "IsBFSI": false
+  },
+  {
+    "Sector": "Financial Services",
+    "MedianPE": 16.5,
+    "MedianROE": 14.5,
+    "TypicalDebtToEquity": null,
+    "IsBFSI": true
+  },
+  {
+    "Sector": "Energy",
+    "MedianPE": 12.0,
+    "MedianROE": 12.0,
+    "TypicalDebtToEquity": 0.65,
+    "IsBFSI": false
+  },
+  {
+    "Sector": "Consumer Staples",
+    "MedianPE": 55.0,
+    "MedianROE": 30.0,
+    "TypicalDebtToEquity": 0.15,
+    "IsBFSI": false
+  },
+  {
+    "Sector": "Healthcare",
+    "MedianPE": 35.0,
+    "MedianROE": 18.0,
+    "TypicalDebtToEquity": 0.20,
+    "IsBFSI": false
+  },
+  {
+    "Sector": "Automobile",
+    "MedianPE": 28.0,
+    "MedianROE": 16.0,
+    "TypicalDebtToEquity": 0.40,
+    "IsBFSI": false
+  },
+  {
+    "Sector": "Metals & Mining",
+    "MedianPE": 10.0,
+    "MedianROE": 14.0,
+    "TypicalDebtToEquity": 0.70,
+    "IsBFSI": false
+  },
+  {
+    "Sector": "Capital Goods",
+    "MedianPE": 35.0,
+    "MedianROE": 15.0,
+    "TypicalDebtToEquity": 0.50,
+    "IsBFSI": false
+  },
+  {
+    "Sector": "Telecom",
+    "MedianPE": 65.0,
+    "MedianROE": 8.0,
+    "TypicalDebtToEquity": 1.50,
+    "IsBFSI": false
+  },
+  {
+    "Sector": "Consumer Discretionary",
+    "MedianPE": 45.0,
+    "MedianROE": 18.0,
+    "TypicalDebtToEquity": 0.30,
+    "IsBFSI": false
+  },
+  {
+    "Sector": "Cement & Construction",
+    "MedianPE": 30.0,
+    "MedianROE": 13.0,
+    "TypicalDebtToEquity": 0.35,
+    "IsBFSI": false
+  },
+  {
+    "Sector": "Oil & Gas",
+    "MedianPE": 8.0,
+    "MedianROE": 12.0,
+    "TypicalDebtToEquity": 0.50,
+    "IsBFSI": false
+  },
+  {
+    "Sector": "Insurance",
+    "MedianPE": 70.0,
+    "MedianROE": 12.0,
+    "TypicalDebtToEquity": null,
+    "IsBFSI": true
+  },
+  {
+    "Sector": "Power & Utilities",
+    "MedianPE": 15.0,
+    "MedianROE": 10.0,
+    "TypicalDebtToEquity": 1.20,
+    "IsBFSI": false
+  }
+]

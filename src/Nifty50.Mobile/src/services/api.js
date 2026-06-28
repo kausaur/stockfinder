@@ -25,5 +25,8 @@ export const api = {
     getScoringProfiles: () => apiClient.get('/scoring-profiles'),
     getActiveProfile: () => apiClient.get('/scoring-profiles/active'),
     activateProfile: (id) => apiClient.post(`/scoring-profiles/${id}/activate`),
+    getRecommendations: () => apiClient.get('/recommendations/picks'),
+    getScreenerResults: (filters) => apiClient.get('/recommendations/screener', { params: filters }),
+    getPeerComparison: (sector) => apiClient.get('/recommendations/compare', { params: { sector } }),
     registerDevice: (token, deviceName, platform) => apiClient.post('/devices', { expoPushToken: token, deviceName, platform }),
 };

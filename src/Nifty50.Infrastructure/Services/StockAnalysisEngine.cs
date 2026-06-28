@@ -29,15 +29,22 @@ public class StockAnalysisEngine : IStockAnalysisEngine
         decimal? week52High = stock?.Week52High;
         decimal? week52Low = stock?.Week52Low;
 
+        var val = await _repo.GetLatestValuationAsync(stockId);
+        var qual = await _repo.GetLatestQualityAsync(stockId);
+
         int techScore = CalculateTechnicalScore(tech, profile, currentPrice, week52High, week52Low);
         int fundScore = CalculateFundamentalScore(fund, profile);
         int sentScore = CalculateSentimentScore(sent);
         int divScore = CalculateDividendScore(fund);
+        int valScore = CalculateValuationScore(val, fund, profile);
+        int qualScore = CalculateQualityScore(qual, profile);
 
         double overall = (profile.TechnicalWeight / 100.0 * techScore)
                        + (profile.FundamentalWeight / 100.0 * fundScore)
                        + (profile.SentimentWeight / 100.0 * sentScore)
-                       + (profile.DividendWeight / 100.0 * divScore);
+                       + (profile.DividendWeight / 100.0 * divScore)
+                       + (profile.ValuationWeight / 100.0 * valScore)
+                       + (profile.QualityWeight / 100.0 * qualScore);
         int overallScore = Math.Clamp((int)overall, 0, 100);
 
         var overallSignal = GetSignal(overallScore, profile);
@@ -48,7 +55,7 @@ public class StockAnalysisEngine : IStockAnalysisEngine
                     && fundScore >= profile.AlertMinFundamentalScore
                     && sentScore >= profile.AlertMinSentimentScore;
 
-        var reasoning = GenerateReasoning(stock?.CompanyName ?? "", techScore, fundScore, sentScore, divScore, overallSignal, tech, fund, sent);
+        var reasoning = GenerateReasoning(stock?.CompanyName ?? "", techScore, fundScore, sentScore, divScore, valScore, qualScore, overallSignal, tech, fund, sent, val, qual);
 
         var analysis = new StockAnalysis
         {
@@ -63,14 +70,31 @@ public class StockAnalysisEngine : IStockAnalysisEngine
             FundamentalScore = fundScore,
             SentimentScore = sentScore,
             DividendScore = divScore,
+            ValuationScore = valScore,
+            QualityScore = qualScore,
             OverallScore = overallScore,
-            WeightsUsed = JsonSerializer.Serialize(new { profile.TechnicalWeight, profile.FundamentalWeight, profile.SentimentWeight, profile.DividendWeight }),
+            WeightsUsed = JsonSerializer.Serialize(new { profile.TechnicalWeight, profile.FundamentalWeight, profile.SentimentWeight, profile.DividendWeight, profile.ValuationWeight, profile.QualityWeight }),
             Reasoning = reasoning,
             IsAlert = isAlert,
             AlertMessage = isAlert ? $"🚨 {overallSignal} signal for {stock?.CompanyName} (Score: {overallScore}/100)" : null,
         };
 
         await _repo.AddAnalysisAsync(analysis);
+
+        var history = new ScoreHistory
+        {
+            StockId = stockId,
+            RecordedAt = DateTime.UtcNow,
+            OverallScore = overallScore,
+            TechnicalScore = techScore,
+            FundamentalScore = fundScore,
+            ValuationScore = valScore,
+            QualityScore = qualScore,
+            DividendScore = divScore,
+            SentimentScore = sentScore
+        };
+        await _repo.AddScoreHistoryAsync(history);
+
         return analysis;
     }
 
@@ -261,6 +285,53 @@ public class StockAnalysisEngine : IStockAnalysisEngine
         return Math.Clamp((int)score, 0, 100);
     }
 
+    private static int CalculateValuationScore(IntrinsicValuation? v, FundamentalMetric? f, ScoringProfile p)
+    {
+        double score = 50; // default middle
+        if (v?.UpsidePercent != null)
+        {
+            var up = v.UpsidePercent.Value;
+            if (up > 25) score = 95;
+            else if (up > 10) score = 80;
+            else if (up > 0) score = 65;
+            else if (up > -10) score = 45;
+            else if (up > -25) score = 25;
+            else score = 10;
+        }
+        else if (f?.PERatio != null) // Graceful degradation if no intrinsic valuation
+        {
+            var pe = f.PERatio.Value;
+            if (pe < 12) score = 90;
+            else if (pe < 20) score = 75;
+            else if (pe < 30) score = 50;
+            else if (pe < 45) score = 30;
+            else score = 15;
+        }
+        return Math.Clamp((int)score, 0, 100);
+    }
+
+    private static int CalculateQualityScore(QualityMetric? q, ScoringProfile p)
+    {
+        if (q == null) return 50;
+        double score = 50;
+
+        if (q.PiotroskiFScore.HasValue)
+        {
+            var pio = q.PiotroskiFScore.Value;
+            if (pio >= 8) score = 95;
+            else if (pio >= 7) score = 85;
+            else if (pio >= 5) score = 60;
+            else if (pio >= 3) score = 40;
+            else score = 20;
+        }
+
+        // Apply bonus/penalty based on FCF trend
+        if (q.FCFTrend == "Positive_Growing") score = Math.Min(100, score + 10);
+        else if (q.FCFTrend == "Negative") score = Math.Max(0, score - 15);
+
+        return Math.Clamp((int)score, 0, 100);
+    }
+
     /// <summary>Converts raw sentiment data into a 0-100 score with more variance</summary>
     private static int CalculateSentimentScore(Nifty50.Core.Entities.SentimentAnalysis? sent)
     {
@@ -325,8 +396,8 @@ public class StockAnalysisEngine : IStockAnalysisEngine
         : score >= p.SellThreshold ? SignalType.Sell
         : SignalType.StrongSell;
 
-    private static string GenerateReasoning(string name, int tech, int fund, int sent, int div,
-        SignalType signal, TechnicalIndicator? t, FundamentalMetric? f, Nifty50.Core.Entities.SentimentAnalysis? se)
+    private static string GenerateReasoning(string name, int tech, int fund, int sent, int div, int val, int qual,
+        SignalType signal, TechnicalIndicator? t, FundamentalMetric? f, Nifty50.Core.Entities.SentimentAnalysis? se, IntrinsicValuation? v, QualityMetric? q)
     {
         var parts = new List<string>();
         parts.Add($"{name}: Overall signal is {signal}.");
@@ -363,6 +434,14 @@ public class StockAnalysisEngine : IStockAnalysisEngine
             parts.Add($"Dividend ({div}/100): Yield {f.DividendYield:F2}%.");
         else
             parts.Add($"Dividend ({div}/100): No dividend data.");
+
+        // Valuation summary
+        if (v?.UpsidePercent.HasValue == true)
+            parts.Add($"Valuation ({val}/100): {v.ValuationVerdict} ({v.UpsidePercent:F1}% upside).");
+
+        // Quality summary
+        if (q?.PiotroskiFScore.HasValue == true)
+            parts.Add($"Quality ({qual}/100): Piotroski F-Score {q.PiotroskiFScore}.");
 
         return string.Join(" ", parts);
     }

@@ -17,7 +17,11 @@ public class AppDbContext : DbContext
     public DbSet<StockAnalysis> StockAnalyses => Set<StockAnalysis>();
     public DbSet<ScoringProfile> ScoringProfiles => Set<ScoringProfile>();
     public DbSet<DeviceRegistration> DeviceRegistrations => Set<DeviceRegistration>();
-
+    public DbSet<SectorBenchmark> SectorBenchmarks => Set<SectorBenchmark>();
+    public DbSet<IntrinsicValuation> IntrinsicValuations => Set<IntrinsicValuation>();
+    public DbSet<QualityMetric> QualityMetrics => Set<QualityMetric>();
+    public DbSet<ScoreHistory> ScoreHistories => Set<ScoreHistory>();
+    public DbSet<IndexMembership> IndexMemberships => Set<IndexMembership>();
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
@@ -32,6 +36,11 @@ public class AppDbContext : DbContext
         modelBuilder.Entity<SentimentAnalysis>().HasQueryFilter(e => !e.IsDeleted);
         modelBuilder.Entity<StockAnalysis>().HasQueryFilter(e => !e.IsDeleted);
         modelBuilder.Entity<ScoringProfile>().HasQueryFilter(e => !e.IsDeleted);
+        modelBuilder.Entity<SectorBenchmark>().HasQueryFilter(e => !e.IsDeleted);
+        modelBuilder.Entity<IntrinsicValuation>().HasQueryFilter(e => !e.IsDeleted);
+        modelBuilder.Entity<QualityMetric>().HasQueryFilter(e => !e.IsDeleted);
+        modelBuilder.Entity<ScoreHistory>().HasQueryFilter(e => !e.IsDeleted);
+        modelBuilder.Entity<IndexMembership>().HasQueryFilter(e => !e.IsDeleted);
 
         // Stock
         modelBuilder.Entity<Stock>(e =>
@@ -99,6 +108,40 @@ public class AppDbContext : DbContext
         {
             e.HasIndex(p => p.Name).IsUnique().HasFilter("\"IsDeleted\" = false");
             e.Property(p => p.Name).HasMaxLength(100).IsRequired();
+        });
+
+        // SectorBenchmark
+        modelBuilder.Entity<SectorBenchmark>(e =>
+        {
+            e.HasIndex(s => new { s.Sector, s.AsOfDate }).IsUnique().HasFilter("\"IsDeleted\" = false");
+        });
+
+        // IntrinsicValuation
+        modelBuilder.Entity<IntrinsicValuation>(e =>
+        {
+            e.HasIndex(i => new { i.StockId, i.ComputedAt }).HasFilter("\"IsDeleted\" = false");
+            e.HasOne(i => i.Stock).WithMany(s => s.IntrinsicValuations).HasForeignKey(i => i.StockId).OnDelete(DeleteBehavior.Cascade);
+        });
+
+        // QualityMetric
+        modelBuilder.Entity<QualityMetric>(e =>
+        {
+            e.HasIndex(q => new { q.StockId, q.AsOfDate }).HasFilter("\"IsDeleted\" = false");
+            e.HasOne(q => q.Stock).WithMany(s => s.QualityMetrics).HasForeignKey(q => q.StockId).OnDelete(DeleteBehavior.Cascade);
+        });
+
+        // ScoreHistory
+        modelBuilder.Entity<ScoreHistory>(e =>
+        {
+            e.HasIndex(s => new { s.StockId, s.RecordedAt }).HasFilter("\"IsDeleted\" = false");
+            e.HasOne(s => s.Stock).WithMany(st => st.ScoreHistories).HasForeignKey(s => s.StockId).OnDelete(DeleteBehavior.Cascade);
+        });
+
+        // IndexMembership
+        modelBuilder.Entity<IndexMembership>(e =>
+        {
+            e.HasIndex(i => new { i.IndexName, i.StockId }).IsUnique().HasFilter("\"IsDeleted\" = false");
+            e.HasOne(i => i.Stock).WithMany(s => s.IndexMemberships).HasForeignKey(i => i.StockId).OnDelete(DeleteBehavior.Cascade);
         });
     }
 
@@ -215,6 +258,50 @@ public static class SeedData
         };
 
         db.ScoringProfiles.AddRange(presets);
+        await db.SaveChangesAsync();
+    }
+    public static async Task UpdatePresetsForV2Async(AppDbContext db)
+    {
+        var presets = await db.ScoringProfiles.Where(p => p.IsPreset).ToListAsync();
+        foreach (var p in presets)
+        {
+            switch (p.Name)
+            {
+                case "Balanced":
+                    p.TechnicalWeight = 25; p.FundamentalWeight = 25; p.SentimentWeight = 12; p.DividendWeight = 13; p.ValuationWeight = 13; p.QualityWeight = 12;
+                    break;
+                case "Growth":
+                    p.TechnicalWeight = 20; p.FundamentalWeight = 32; p.SentimentWeight = 15; p.DividendWeight = 5; p.ValuationWeight = 18; p.QualityWeight = 10;
+                    break;
+                case "Value":
+                    p.TechnicalWeight = 10; p.FundamentalWeight = 30; p.SentimentWeight = 3; p.DividendWeight = 12; p.ValuationWeight = 30; p.QualityWeight = 15;
+                    break;
+                case "Income":
+                    p.TechnicalWeight = 8; p.FundamentalWeight = 18; p.SentimentWeight = 4; p.DividendWeight = 45; p.ValuationWeight = 10; p.QualityWeight = 15;
+                    break;
+                case "Momentum":
+                    p.TechnicalWeight = 45; p.FundamentalWeight = 15; p.SentimentWeight = 18; p.DividendWeight = 3; p.ValuationWeight = 10; p.QualityWeight = 9;
+                    break;
+                case "Quality":
+                    p.TechnicalWeight = 10; p.FundamentalWeight = 28; p.SentimentWeight = 5; p.DividendWeight = 12; p.ValuationWeight = 15; p.QualityWeight = 30;
+                    break;
+            }
+        }
+
+        if (!await db.ScoringProfiles.AnyAsync(p => p.Name == "Long-Term Investor" && !p.IsDeleted))
+        {
+            db.ScoringProfiles.Add(new ScoringProfile
+            {
+                Name = "Long-Term Investor", IsPreset = true,
+                TechnicalWeight = 12, FundamentalWeight = 28, SentimentWeight = 5, DividendWeight = 7, ValuationWeight = 25, QualityWeight = 23,
+                TechRSIWeight = 20, TechMACDWeight = 25, TechMovingAvgWeight = 25, TechBollingerWeight = 15, TechADXWeight = 10, TechVolumeWeight = 5,
+                FundValuationWeight = 15, FundProfitabilityWeight = 25, FundLiquidityWeight = 15, FundLeverageWeight = 15, FundGrowthWeight = 15, FundROCEWeight = 10, FundPEGWeight = 5,
+                QualPiotroskiWeight = 30, QualAltmanWeight = 15, QualPromoterWeight = 20, QualFIIWeight = 15, QualDividendConsistencyWeight = 10, QualFCFTrendWeight = 10,
+                AlertMinOverallScore = 65, AlertMinTechnicalScore = 0, AlertMinFundamentalScore = 50, AlertMinSentimentScore = 0,
+                StrongBuyThreshold = 75, BuyThreshold = 60, HoldThreshold = 42, SellThreshold = 25
+            });
+        }
+
         await db.SaveChangesAsync();
     }
 }

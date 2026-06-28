@@ -38,6 +38,22 @@ export default function TabLayout() {
                 }}
             />
             <Tabs.Screen
+                name="recommendations"
+                options={{
+                    title: 'Picks',
+                    tabBarLabel: 'Picks',
+                    tabBarIcon: ({ color, size }) => <Ionicons name="star" size={size} color={color} />
+                }}
+            />
+            <Tabs.Screen
+                name="screener"
+                options={{
+                    title: 'Screener',
+                    tabBarLabel: 'Screener',
+                    tabBarIcon: ({ color, size }) => <Ionicons name="search" size={size} color={color} />
+                }}
+            />
+            <Tabs.Screen
                 name="settings"
                 options={{
                     title: 'Settings',

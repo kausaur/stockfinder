@@ -206,7 +206,7 @@ public class ScoringProfileController : ControllerBase
     [HttpPut("active")]
     public async Task<ActionResult> UpdateActive([FromBody] ScoringProfileUpdateDto dto)
     {
-        if (dto.TechnicalWeight + dto.FundamentalWeight + dto.SentimentWeight + dto.DividendWeight != 100)
+        if (dto.TechnicalWeight + dto.FundamentalWeight + dto.SentimentWeight + dto.DividendWeight + dto.ValuationWeight + dto.QualityWeight != 100)
             return BadRequest("Weights must sum to 100");
         await _service.UpdateActiveProfileAsync(dto);
         return Ok(new { message = "Profile updated" });
@@ -215,6 +215,8 @@ public class ScoringProfileController : ControllerBase
     [HttpPost]
     public async Task<ActionResult<ScoringProfileDto>> Create([FromBody] ScoringProfileDto dto)
     {
+        if (dto.TechnicalWeight + dto.FundamentalWeight + dto.SentimentWeight + dto.DividendWeight + dto.ValuationWeight + dto.QualityWeight != 100)
+            return BadRequest("Weights must sum to 100");
         var profile = await _service.CreateProfileAsync(dto);
         return Ok(MapProfile(profile));
     }
@@ -226,9 +228,10 @@ public class ScoringProfileController : ControllerBase
     public async Task<ActionResult> Reset() { await _service.ResetToDefaultAsync(); return Ok(new { message = "Reset to Balanced" }); }
 
     private static ScoringProfileDto MapProfile(Nifty50.Core.Entities.ScoringProfile p) =>
-        new(p.Id, p.Name, p.IsDefault, p.IsPreset, p.TechnicalWeight, p.FundamentalWeight, p.SentimentWeight, p.DividendWeight,
+        new(p.Id, p.Name, p.IsDefault, p.IsPreset, p.TechnicalWeight, p.FundamentalWeight, p.SentimentWeight, p.DividendWeight, p.ValuationWeight, p.QualityWeight,
             p.TechRSIWeight, p.TechMACDWeight, p.TechMovingAvgWeight, p.TechBollingerWeight, p.TechADXWeight, p.TechVolumeWeight,
-            p.FundValuationWeight, p.FundProfitabilityWeight, p.FundLiquidityWeight, p.FundLeverageWeight, p.FundGrowthWeight,
+            p.FundValuationWeight, p.FundProfitabilityWeight, p.FundLiquidityWeight, p.FundLeverageWeight, p.FundGrowthWeight, p.FundROCEWeight, p.FundPEGWeight,
+            p.QualPiotroskiWeight, p.QualAltmanWeight, p.QualPromoterWeight, p.QualFIIWeight, p.QualDividendConsistencyWeight, p.QualFCFTrendWeight,
             p.AlertMinOverallScore, p.AlertMinTechnicalScore, p.AlertMinFundamentalScore, p.AlertMinSentimentScore,
             p.StrongBuyThreshold, p.BuyThreshold, p.HoldThreshold, p.SellThreshold);
 }
@@ -265,5 +268,35 @@ public class AdminController : ControllerBase
     {
         _ = Task.Run(() => _refresh.RefreshAllDataAsync());
         return Ok(new { message = "Refresh started in background" });
+    }
+}
+
+[ApiController]
+[Route("api/[controller]")]
+public class RecommendationsController : ControllerBase
+{
+    private readonly IRecommendationService _service;
+    
+    public RecommendationsController(IRecommendationService service)
+    {
+        _service = service;
+    }
+
+    [HttpGet("dashboard")]
+    public async Task<ActionResult<RecommendationDashboardDto>> GetDashboard()
+    {
+        return Ok(await _service.GetDashboardAsync());
+    }
+
+    [HttpPost("screener")]
+    public async Task<ActionResult<List<StockRecommendationDto>>> Screen([FromBody] ScreenerFilters filters)
+    {
+        return Ok(await _service.ScreenStocksAsync(filters));
+    }
+
+    [HttpGet("{stockId}/peers")]
+    public async Task<ActionResult<List<PeerComparisonDto>>> GetPeers(Guid stockId)
+    {
+        return Ok(await _service.GetPeersAsync(stockId));
     }
 }

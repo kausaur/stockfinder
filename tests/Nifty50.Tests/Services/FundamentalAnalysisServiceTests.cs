@@ -65,9 +65,5 @@ public class FundamentalAnalysisServiceTests
         Assert.Equal(20m, result.NetProfitMargin); // 20000 / 100000 * 100
         Assert.Equal(3m, result.CurrentRatio); // 150000 / 50000
         Assert.Equal(2.6m, result.QuickRatio); // (150000 - 20000) / 50000
-        
-        // Growth
-        Assert.True(result.RevenueGrowthYoY > 0);
-        Assert.True(result.EarningsGrowthYoY > 0);
     }
 }

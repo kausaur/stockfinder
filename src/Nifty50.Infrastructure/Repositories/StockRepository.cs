@@ -34,7 +34,7 @@ public class StockRepository : IStockRepository
                         .Where(a => a.StockId == s.Id)
                         .OrderByDescending(a => a.AnalyzedAt)
                         .FirstOrDefault()
-                    select new { Stock = s, Analysis = latestAnalysis };
+                    select new { Stock = s, Analysis = (StockAnalysis?)latestAnalysis };
                     
         var results = await query.OrderBy(x => x.Stock.Symbol).ToListAsync();
         return results.Select(x => (x.Stock, x.Analysis)).ToList();
@@ -269,4 +269,38 @@ public class StockRepository : IStockRepository
     }
 
     public async Task SaveChangesAsync() => await _db.SaveChangesAsync();
+
+    public async Task<SectorBenchmark?> GetSectorBenchmarkAsync(string sector) =>
+        await _db.SectorBenchmarks.Where(s => s.Sector == sector).OrderByDescending(s => s.AsOfDate).AsNoTracking().FirstOrDefaultAsync();
+
+    public async Task AddScoreHistoryAsync(ScoreHistory history)
+    {
+        _db.ScoreHistories.Add(history);
+        await _db.SaveChangesAsync();
+    }
+
+    public async Task<IntrinsicValuation?> GetLatestValuationAsync(Guid stockId) =>
+        await _db.IntrinsicValuations.Where(v => v.StockId == stockId).OrderByDescending(v => v.ComputedAt).AsNoTracking().FirstOrDefaultAsync();
+
+    public async Task<QualityMetric?> GetLatestQualityAsync(Guid stockId) =>
+        await _db.QualityMetrics.Where(q => q.StockId == stockId).OrderByDescending(q => q.AsOfDate).AsNoTracking().FirstOrDefaultAsync();
+
+    public async Task UpsertQualityMetricAsync(QualityMetric metric)
+    {
+        var existing = await _db.QualityMetrics.FirstOrDefaultAsync(x => x.StockId == metric.StockId && x.AsOfDate.Date == metric.AsOfDate.Date);
+        if (existing != null)
+        {
+            metric.Id = existing.Id;
+            _db.Entry(existing).CurrentValues.SetValues(metric);
+            _db.Entry(existing).Property(x => x.Id).IsModified = false;
+        }
+        else _db.QualityMetrics.Add(metric);
+        await _db.SaveChangesAsync();
+    }
+
+    public async Task<List<ScoreHistory>> GetScoreHistoryAsync(Guid stockId, int limit = 100) =>
+        await _db.ScoreHistories.Where(s => s.StockId == stockId).OrderByDescending(s => s.RecordedAt).Take(limit).AsNoTracking().ToListAsync();
+
+    public async Task<List<IndexMembership>> GetIndexMembershipsAsync(string indexName) =>
+        await _db.IndexMemberships.Include(i => i.Stock).Where(i => i.IndexName == indexName && i.IsActive).AsNoTracking().ToListAsync();
 }

@@ -113,6 +113,8 @@ public class DataRefreshService : BackgroundService, IDataRefreshService
         var fundAnalysis = scope.ServiceProvider.GetRequiredService<IFundamentalAnalysisService>();
         var sentimentService = scope.ServiceProvider.GetRequiredService<ISentimentService>();
         var analysisEngine = scope.ServiceProvider.GetRequiredService<IStockAnalysisEngine>();
+        var intrinsicValueService = scope.ServiceProvider.GetRequiredService<IIntrinsicValueService>();
+        var qualityAssessmentService = scope.ServiceProvider.GetRequiredService<IQualityAssessmentService>();
 
 
         int count = 0;
@@ -185,6 +187,17 @@ public class DataRefreshService : BackgroundService, IDataRefreshService
                     // 6. Calculate fundamental metrics using real shares outstanding
                     var metric = fundAnalysis.CalculateMetrics(stock.Id, statements, stock.CurrentPrice, stock.SharesOutstanding, baseMetric);
                     await repo.AddFundamentalMetricAsync(metric);
+
+                    // 6a. Intrinsic Valuation
+                    var valuation = intrinsicValueService.CalculateIntrinsicValue(stock.Id, stock.CurrentPrice ?? 0, metric);
+                    var db = scope.ServiceProvider.GetRequiredService<Nifty50.Infrastructure.Data.AppDbContext>();
+                    db.IntrinsicValuations.Add(valuation);
+                    await db.SaveChangesAsync(ct);
+
+                    // 6b. Quality Assessment
+                    var existingQuality = await repo.GetLatestQualityAsync(stock.Id);
+                    var quality = qualityAssessmentService.AssessQuality(stock.Id, statements, metric, existingQuality);
+                    await repo.UpsertQualityMetricAsync(quality);
                 }
 
                 // 7. Calculate technical indicators from stored price history (limit to last 250 days to save memory)
@@ -215,6 +228,41 @@ public class DataRefreshService : BackgroundService, IDataRefreshService
             {
                 _logger.LogError(ex, "Error processing {Symbol}", symbol);
             }
+        }
+
+        // 8b. ScoreHistory Compaction
+        try
+        {
+            _logger.LogInformation("Compacting ScoreHistory...");
+            var db = scope.ServiceProvider.GetRequiredService<Nifty50.Infrastructure.Data.AppDbContext>();
+            var ninetyDaysAgo = DateTime.UtcNow.AddDays(-90);
+            var oneYearAgo = DateTime.UtcNow.AddYears(-1);
+
+            // Fetch old records to compact
+            var oldRecords = await db.ScoreHistories
+                .Where(sh => sh.RecordedAt < ninetyDaysAgo)
+                .ToListAsync(ct);
+
+            // For records between 90 days and 1 year, keep 1 per week (Sunday).
+            // For records > 1 year, keep 1 per month (1st of month).
+            var toDelete = oldRecords.Where(sh => 
+            {
+                if (sh.RecordedAt < oneYearAgo)
+                    return sh.RecordedAt.Day != 1;
+                else
+                    return sh.RecordedAt.DayOfWeek != DayOfWeek.Sunday;
+            }).ToList();
+
+            if (toDelete.Any())
+            {
+                db.ScoreHistories.RemoveRange(toDelete);
+                await db.SaveChangesAsync(ct);
+                _logger.LogInformation("Deleted {Count} compacted ScoreHistory records.", toDelete.Count);
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error compacting ScoreHistory");
         }
 
         // 9. Run analysis engine to generate Buy/Sell/Hold signals for all stocks

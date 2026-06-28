@@ -138,11 +138,13 @@ export default function StockDetail() {
           <div className="grid grid-cols-1 md:grid-cols-6 gap-6 items-center">
             <div className="col-span-1 text-center"><SignalBadge signal={analysis.overallSignal} large /></div>
             <div className="col-span-1"><ScoreGauge score={analysis.overallScore} label="Overall" color="#3b82f6" /></div>
-            <div className="col-span-1 md:col-span-4 grid grid-cols-2 sm:grid-cols-4 gap-3">
+            <div className="col-span-1 md:col-span-4 grid grid-cols-2 sm:grid-cols-6 gap-3">
               <ScoreGauge score={analysis.technicalScore} label="Technical" color="#10b981" />
               <ScoreGauge score={analysis.fundamentalScore} label="Fundamental" color="#8b5cf6" />
               <ScoreGauge score={analysis.sentimentScore} label="Sentiment" color="#f59e0b" />
               <ScoreGauge score={analysis.dividendScore} label="Dividend" color="#ec4899" />
+              <ScoreGauge score={analysis.valuationScore} label="Valuation" color="#0ea5e9" />
+              <ScoreGauge score={analysis.qualityScore} label="Quality" color="#14b8a6" />
             </div>
           </div>
           {analysis.reasoning && <p className="text-sm text-slate-400 mt-4 p-3 bg-slate-800/30 rounded-lg">{analysis.reasoning}</p>}

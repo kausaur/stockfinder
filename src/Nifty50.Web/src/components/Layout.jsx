@@ -6,6 +6,8 @@ const navItems = [
   { path: '/', label: 'Dashboard', icon: '📊' },
   { path: '/stocks', label: 'Stocks', icon: '📈' },
   { path: '/alerts', label: 'Alerts', icon: '🚨' },
+  { path: '/recommendations', label: 'Picks', icon: '🎯' },
+  { path: '/screener', label: 'Screener', icon: '🔍' },
   { path: '/settings', label: 'Settings', icon: '⚙️' },
   { path: '/admin', label: 'Admin', icon: '🔧' },
 ];

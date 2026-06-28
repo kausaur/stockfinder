@@ -25,4 +25,7 @@ export const recalculateAnalyses = () => api.post('/analysis/recalculate');
 export const refreshData = () => api.post('/refresh');
 export const getAdminHealth = () => api.get('/admin/health');
 export const getAdminApiCalls = (apiName, limit) => api.get('/admin/api-calls', { params: { api: apiName, limit } });
+export const getRecommendationsDashboard = () => api.get('/recommendations/dashboard');
+export const screenStocks = (filters) => api.post('/recommendations/screener', filters);
+export const getPeers = (id) => api.get(`/recommendations/${id}/peers`);
 export default api;

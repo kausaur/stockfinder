@@ -31,7 +31,7 @@ public class YahooFinanceServiceTests
             .ReturnsAsync(new HttpResponseMessage
             {
                 StatusCode = HttpStatusCode.OK,
-                Content = new StringContent("Date,Open,High,Low,Close,Adj Close,Volume\n2025-01-01,100,105,95,102,102,1000\n2025-01-02,102,108,100,105,105,1200")
+                Content = new StringContent(@"{""chart"":{""result"":[{""timestamp"":[1735689600,1735776000],""indicators"":{""quote"":[{""open"":[100,102],""high"":[105,108],""low"":[95,100],""close"":[102,105],""volume"":[1000,1200]}]}}]}}")
             });
 
         var httpClient = new HttpClient(mockHttpMessageHandler.Object);

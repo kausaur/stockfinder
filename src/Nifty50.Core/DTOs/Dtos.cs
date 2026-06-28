@@ -5,7 +5,8 @@ public record StockDto(Guid Id, string Symbol, string CompanyName, string? Secto
     decimal? Week52High, decimal? Week52Low, bool IsActive);
 
 public record StockListDto(Guid Id, string Symbol, string CompanyName, string? Sector,
-    decimal? CurrentPrice, decimal? DayChangePercent, decimal? MarketCap, string? OverallSignal, int? OverallScore);
+    decimal? CurrentPrice, decimal? DayChangePercent, decimal? MarketCap, string? OverallSignal, int? OverallScore,
+    int? ValuationScore = null, int? QualityScore = null);
 
 public record StockPriceDto(DateTime Date, decimal Open, decimal High, decimal Low, decimal Close, decimal AdjClose, long Volume);
 
@@ -37,19 +38,22 @@ public record SentimentDto(DateTime AnalyzedAt, string OverallSentiment, decimal
 public record AnalysisDto(Guid StockId, string Symbol, string CompanyName, DateTime AnalyzedAt,
     string TechnicalSignal, string FundamentalSignal, string SentimentSignal, string OverallSignal,
     int TechnicalScore, int FundamentalScore, int SentimentScore, int DividendScore, int OverallScore,
-    string? Reasoning, bool IsAlert, string? AlertMessage, string? ProfileName);
+    string? Reasoning, bool IsAlert, string? AlertMessage, string? ProfileName,
+    int? ValuationScore = null, int? QualityScore = null, string? ValuationSignal = null, string? QualitySignal = null);
 
 public record ScoringProfileDto(Guid Id, string Name, bool IsDefault, bool IsPreset,
-    int TechnicalWeight, int FundamentalWeight, int SentimentWeight, int DividendWeight,
+    int TechnicalWeight, int FundamentalWeight, int SentimentWeight, int DividendWeight, int ValuationWeight, int QualityWeight,
     int TechRSIWeight, int TechMACDWeight, int TechMovingAvgWeight, int TechBollingerWeight, int TechADXWeight, int TechVolumeWeight,
-    int FundValuationWeight, int FundProfitabilityWeight, int FundLiquidityWeight, int FundLeverageWeight, int FundGrowthWeight,
+    int FundValuationWeight, int FundProfitabilityWeight, int FundLiquidityWeight, int FundLeverageWeight, int FundGrowthWeight, int FundROCEWeight, int FundPEGWeight,
+    int QualPiotroskiWeight, int QualAltmanWeight, int QualPromoterWeight, int QualFIIWeight, int QualDividendConsistencyWeight, int QualFCFTrendWeight,
     int AlertMinOverallScore, int AlertMinTechnicalScore, int AlertMinFundamentalScore, int AlertMinSentimentScore,
     int StrongBuyThreshold, int BuyThreshold, int HoldThreshold, int SellThreshold);
 
 public record ScoringProfileUpdateDto(
-    int TechnicalWeight, int FundamentalWeight, int SentimentWeight, int DividendWeight,
+    int TechnicalWeight, int FundamentalWeight, int SentimentWeight, int DividendWeight, int ValuationWeight, int QualityWeight,
     int TechRSIWeight, int TechMACDWeight, int TechMovingAvgWeight, int TechBollingerWeight, int TechADXWeight, int TechVolumeWeight,
-    int FundValuationWeight, int FundProfitabilityWeight, int FundLiquidityWeight, int FundLeverageWeight, int FundGrowthWeight,
+    int FundValuationWeight, int FundProfitabilityWeight, int FundLiquidityWeight, int FundLeverageWeight, int FundGrowthWeight, int FundROCEWeight, int FundPEGWeight,
+    int QualPiotroskiWeight, int QualAltmanWeight, int QualPromoterWeight, int QualFIIWeight, int QualDividendConsistencyWeight, int QualFCFTrendWeight,
     int AlertMinOverallScore, int AlertMinTechnicalScore, int AlertMinFundamentalScore, int AlertMinSentimentScore,
     int StrongBuyThreshold, int BuyThreshold, int HoldThreshold, int SellThreshold);
 
@@ -80,3 +84,39 @@ public record StockMetadataDto(
     long? SharesOutstanding);
 
 public record DeviceRegistrationDto(string ExpoPushToken, string DeviceName, string Platform);
+
+public record ScreenerFilters(
+    int? MinScore = null, int? MaxScore = null,
+    List<string>? Sectors = null,
+    List<string>? Signals = null,
+    decimal? MaxPE = null,
+    decimal? MinROE = null,
+    decimal? MaxDebtToEquity = null,
+    decimal? MinDividendYield = null,
+    int? MinPiotroskiScore = null,
+    string? ValuationVerdict = null,
+    string? SortBy = "Score"
+);
+
+public record StockRecommendationDto(
+    Guid StockId, string Symbol, string CompanyName, string? Sector,
+    decimal? CurrentPrice, decimal? DayChangePercent,
+    string OverallSignal, int OverallScore,
+    int TechnicalScore, int FundamentalScore, int ValuationScore, int QualityScore,
+    decimal? PE, decimal? ROE, decimal? UpsidePercent, string? ValuationVerdict, string? KeyInsight
+);
+
+public record RecommendationDashboardDto(
+    List<StockRecommendationDto> TopBullish,
+    List<StockRecommendationDto> BottomBearish,
+    List<SectorPerformanceDto> SectorAverages,
+    List<StockRecommendationDto> ValueOpportunities,
+    int BullishCount, int BearishCount
+);
+
+public record PeerComparisonDto(
+    Guid StockId, string Symbol, string CompanyName, string? Sector,
+    int OverallScore, int TechnicalScore, int FundamentalScore, int ValuationScore, int QualityScore,
+    decimal? PE, decimal? PB, decimal? ROE, decimal? DebtToEquity, decimal? DividendYield,
+    decimal? MarketCap, decimal? UpsidePercent, int? PiotroskiScore
+);

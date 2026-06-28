@@ -11,6 +11,8 @@ public class ScoringProfile : BaseEntity
     public int FundamentalWeight { get; set; } = 25;
     public int SentimentWeight { get; set; } = 20;
     public int DividendWeight { get; set; } = 15;
+    public int ValuationWeight { get; set; } = 0;
+    public int QualityWeight { get; set; } = 0;
 
     // Technical sub-weights (sum to 100 within category)
     public int TechRSIWeight { get; set; } = 20;
@@ -26,6 +28,16 @@ public class ScoringProfile : BaseEntity
     public int FundLiquidityWeight { get; set; } = 15;
     public int FundLeverageWeight { get; set; } = 15;
     public int FundGrowthWeight { get; set; } = 20;
+    public int FundROCEWeight { get; set; } = 0;
+    public int FundPEGWeight { get; set; } = 0;
+
+    // Quality sub-weights (sum to 100 within category)
+    public int QualPiotroskiWeight { get; set; } = 30;
+    public int QualAltmanWeight { get; set; } = 15;
+    public int QualPromoterWeight { get; set; } = 20;
+    public int QualFIIWeight { get; set; } = 15;
+    public int QualDividendConsistencyWeight { get; set; } = 10;
+    public int QualFCFTrendWeight { get; set; } = 10;
 
     // Alert thresholds
     public int AlertMinOverallScore { get; set; } = 80;
