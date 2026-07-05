@@ -105,7 +105,11 @@ public class RecommendationService : IRecommendationService
             .ToListAsync();
             
         foreach(var a in latestAnalyses) 
-            a!.Stock = activeStocks.First(s => s.Id == a.StockId);
+        {
+            var stock = activeStocks.FirstOrDefault(s => s.Id == a!.StockId);
+            if (stock != null)
+                a!.Stock = stock;
+        }
             
         var stockIds = latestAnalyses.Select(a => a!.StockId).ToList();
         
