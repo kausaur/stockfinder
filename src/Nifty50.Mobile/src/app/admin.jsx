@@ -67,7 +67,7 @@ export default function AdminScreen() {
 
             <View style={styles.section}>
                 <Text style={styles.sectionTitle}>Scoring Profiles</Text>
-                <Text style={styles.helperText}>Select the algorithm used to generate buy/sell signals.</Text>
+                <Text style={styles.helperText}>Select the algorithm used to generate bullish/bearish signals.</Text>
                 
                 {profiles?.map(profile => (
                     <PresetCard 

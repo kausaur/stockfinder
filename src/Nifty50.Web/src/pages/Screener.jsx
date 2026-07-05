@@ -157,7 +157,7 @@ const Screener = () => {
                       {stock.roe ? `${stock.roe.toFixed(1)}%` : '-'}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                      <span className={`px-2 py-1 rounded-full text-xs ${stock.overallSignal?.includes('Buy') ? 'bg-green-100 text-green-800' : stock.overallSignal?.includes('Sell') ? 'bg-red-100 text-red-800' : 'bg-gray-100 text-gray-800'}`}>
+                      <span className={`px-2 py-1 rounded-full text-xs ${stock.overallSignal?.includes('Bull') ? 'bg-green-100 text-green-800' : stock.overallSignal?.includes('Bear') ? 'bg-red-100 text-red-800' : 'bg-gray-100 text-gray-800'}`}>
                         {stock.overallSignal}
                       </span>
                     </td>

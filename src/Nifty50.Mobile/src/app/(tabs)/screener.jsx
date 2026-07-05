@@ -9,7 +9,7 @@ export default function ScreenerScreen() {
     const [loading, setLoading] = useState(false);
     const [filters, setFilters] = useState({
         MinScore: '60',
-        Signals: 'Buy',
+        Signals: 'Bullish Signal, Strong Bullish',
     });
     const router = useRouter();
 
@@ -108,6 +108,10 @@ export default function ScreenerScreen() {
                 </Text>
                 
                 {results.map(renderStockCard)}
+                <View className="mt-4 mb-6 p-4 bg-slate-800 rounded-xl border border-slate-700">
+                    <Text className="text-slate-300 font-bold mb-1 text-xs">⚠️ Educational Purposes Only - Not SEBI Registered</Text>
+                    <Text className="text-slate-400 text-xs leading-5">This application provides stock analysis scores based on publicly available data for educational and informational purposes only. The creators are not SEBI-registered Research Analysts (SEBI RA Regulations, 2014) nor Investment Advisers (SEBI IA Regulations, 2013). All scores and signals are algorithmically generated and may not reflect current market conditions. Past performance is not indicative of future results. Investment in securities market are subject to market risks. Always consult a qualified, SEBI-registered financial advisor before making investment decisions.</Text>
+                </View>
                 
                 <View className="h-20" />
             </ScrollView>

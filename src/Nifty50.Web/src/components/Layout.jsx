@@ -112,6 +112,11 @@ export default function Layout() {
         </header>
         <div className="p-4 md:p-8 animate-fade-in max-w-full overflow-x-hidden">
           <Outlet />
+          
+          <div className="mt-12 p-4 bg-slate-800/50 border border-slate-700/50 rounded-xl text-xs text-slate-400">
+            <p className="font-semibold text-slate-300 mb-1">⚠️ Educational Purposes Only - Not SEBI Registered</p>
+            <p>This application provides stock analysis scores based on publicly available data for educational and informational purposes only. The creators are not SEBI-registered Research Analysts (SEBI RA Regulations, 2014) nor Investment Advisers (SEBI IA Regulations, 2013). All scores and signals are algorithmically generated and may not reflect current market conditions. Past performance is not indicative of future results. Investment in securities market are subject to market risks. Always consult a qualified, SEBI-registered financial advisor before making investment decisions.</p>
+          </div>
         </div>
       </main>
     </div>

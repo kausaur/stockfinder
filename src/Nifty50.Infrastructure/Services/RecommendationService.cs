@@ -242,10 +242,16 @@ public class RecommendationService : IRecommendationService
 
     private StockRecommendationDto MapToRecommendationDto(StockAnalysis a, IntrinsicValuation? v, QualityMetric? q, FundamentalMetric? f = null)
     {
+        var sig = a.OverallSignal.ToString();
+        if (sig == "StrongBuy") sig = "Strong Bullish";
+        else if (sig == "Buy") sig = "Bullish";
+        else if (sig == "Sell") sig = "Bearish";
+        else if (sig == "StrongSell") sig = "Strong Bearish";
+
         return new StockRecommendationDto(
             a.StockId, a.Stock?.Symbol ?? "", a.Stock?.CompanyName ?? "", a.Stock?.Sector,
             a.Stock?.CurrentPrice, a.Stock?.DayChangePercent,
-            a.OverallSignal.ToString(), a.OverallScore,
+            sig, a.OverallScore,
             a.TechnicalScore, a.FundamentalScore, a.ValuationScore ?? 0, a.QualityScore ?? 0,
             f?.PERatio, f?.ROE ?? q?.ROICLatest, v?.UpsidePercent, v?.ValuationVerdict,
             a.Reasoning,

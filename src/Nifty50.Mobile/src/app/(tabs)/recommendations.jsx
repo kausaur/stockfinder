@@ -75,7 +75,7 @@ export default function RecommendationsScreen() {
                         <Text className="text-teal-400 text-xs font-bold">Quality: {stock.qualityScore}</Text>
                     </View>
                 </View>
-                <View className={`px-3 py-1 rounded-full ${stock.overallSignal === 'Strong Buy' ? 'bg-emerald-500' : 'bg-blue-500'}`}>
+                <View className={`px-3 py-1 rounded-full ${stock.overallSignal === 'Strong Bullish' ? 'bg-emerald-500' : 'bg-blue-500'}`}>
                     <Text className="text-white text-xs font-bold">{stock.overallSignal}</Text>
                 </View>
             </View>
@@ -114,6 +114,10 @@ export default function RecommendationsScreen() {
                         picks.bottomBearish.map(renderStockCard) : 
                         <Text className="text-slate-500 italic mb-4">No bearish picks currently.</Text>
                     }
+                </View>
+                <View className="mb-6 p-4 bg-slate-800 rounded-xl border border-slate-700">
+                    <Text className="text-slate-300 font-bold mb-1 text-xs">⚠️ Educational Purposes Only - Not SEBI Registered</Text>
+                    <Text className="text-slate-400 text-xs leading-5">This application provides stock analysis scores based on publicly available data for educational and informational purposes only. The creators are not SEBI-registered Research Analysts (SEBI RA Regulations, 2014) nor Investment Advisers (SEBI IA Regulations, 2013). All scores and signals are algorithmically generated and may not reflect current market conditions. Past performance is not indicative of future results. Investment in securities market are subject to market risks. Always consult a qualified, SEBI-registered financial advisor before making investment decisions.</Text>
                 </View>
                 
                 <View className="h-20" />

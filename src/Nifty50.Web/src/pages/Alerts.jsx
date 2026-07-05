@@ -16,7 +16,7 @@ export default function Alerts() {
       <div className="glass-card p-5 border-amber-500/20 bg-amber-500/5">
         <div className="flex items-center gap-3">
           <span className="text-2xl">🚨</span>
-          <h3 className="text-lg font-bold text-amber-400">Buy Alerts ({alerts.length})</h3>
+          <h3 className="text-lg font-bold text-amber-400">Bullish Signal Alerts ({alerts.length})</h3>
         </div>
         <p className="text-sm text-slate-400 mt-1">Stocks meeting all alert thresholds based on your active scoring profile.</p>
       </div>
