@@ -39,7 +39,7 @@ public class IntrinsicValueService : IIntrinsicValueService
         if (metric.PERatio.HasValue && metric.PERatio.Value > 0 && 
             metric.EarningsGrowthYoY.HasValue && metric.EarningsGrowthYoY.Value > 0)
         {
-            valuation.PEGRatio = metric.PERatio.Value / (metric.EarningsGrowthYoY.Value * 100m);
+            valuation.PEGRatio = metric.PERatio.Value / metric.EarningsGrowthYoY.Value;
         }
 
         // 3. Earnings Power Value: (OperatingIncome * (1 - TaxRate)) / DiscountRate / Shares
@@ -66,7 +66,7 @@ public class IntrinsicValueService : IIntrinsicValueService
         {
             valuation.EstimatedFairValue = estimates.Average();
             
-            if (valuation.EstimatedFairValue.Value > 0)
+            if (valuation.EstimatedFairValue.Value > 0 && currentPrice > 0)
             {
                 valuation.UpsidePercent = ((valuation.EstimatedFairValue.Value - currentPrice) / currentPrice) * 100m;
                 
@@ -76,6 +76,10 @@ public class IntrinsicValueService : IIntrinsicValueService
                 else if (valuation.UpsidePercent > -10m) valuation.ValuationVerdict = "Fairly Valued";
                 else if (valuation.UpsidePercent > -25m) valuation.ValuationVerdict = "Moderately Overvalued";
                 else valuation.ValuationVerdict = "Significantly Overvalued";
+            }
+            else
+            {
+                valuation.ValuationVerdict = "Unknown (Insufficient Data)";
             }
         }
         else

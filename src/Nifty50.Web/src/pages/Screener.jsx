@@ -27,11 +27,11 @@ const Screener = () => {
     try {
       // Clean up filters before sending
       const payload = { ...filters };
-      if (!payload.MaxPE) delete payload.MaxPE;
-      if (!payload.MinROE) delete payload.MinROE;
-      if (!payload.MaxDebtToEquity) delete payload.MaxDebtToEquity;
-      if (!payload.MinDividendYield) delete payload.MinDividendYield;
-      if (!payload.MinPiotroskiScore) delete payload.MinPiotroskiScore;
+      if (payload.MaxPE === undefined || payload.MaxPE === '') delete payload.MaxPE;
+      if (payload.MinROE === undefined || payload.MinROE === '') delete payload.MinROE;
+      if (payload.MaxDebtToEquity === undefined || payload.MaxDebtToEquity === '') delete payload.MaxDebtToEquity;
+      if (payload.MinDividendYield === undefined || payload.MinDividendYield === '') delete payload.MinDividendYield;
+      if (payload.MinPiotroskiScore === undefined || payload.MinPiotroskiScore === '') delete payload.MinPiotroskiScore;
       
       const res = await screenStocks(payload);
       setResults(res.data);
@@ -140,7 +140,7 @@ const Screener = () => {
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center">
                         <div>
-                          <Link to={`/stock/${stock.stockId}`} className="text-sm font-medium text-primary hover:underline">{stock.symbol}</Link>
+                          <Link to={`/stocks/${stock.stockId}`} className="text-sm font-medium text-primary hover:underline">{stock.symbol}</Link>
                           <div className="text-xs text-gray-500">{stock.companyName}</div>
                         </div>
                       </div>
@@ -157,7 +157,7 @@ const Screener = () => {
                       {stock.roe ? `${stock.roe.toFixed(1)}%` : '-'}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                      <span className={`px-2 py-1 rounded-full text-xs ${stock.overallSignal.includes('Buy') ? 'bg-green-100 text-green-800' : stock.overallSignal.includes('Sell') ? 'bg-red-100 text-red-800' : 'bg-gray-100 text-gray-800'}`}>
+                      <span className={`px-2 py-1 rounded-full text-xs ${stock.overallSignal?.includes('Buy') ? 'bg-green-100 text-green-800' : stock.overallSignal?.includes('Sell') ? 'bg-red-100 text-red-800' : 'bg-gray-100 text-gray-800'}`}>
                         {stock.overallSignal}
                       </span>
                     </td>

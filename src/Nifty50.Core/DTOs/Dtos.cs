@@ -103,7 +103,8 @@ public record StockRecommendationDto(
     decimal? CurrentPrice, decimal? DayChangePercent,
     string OverallSignal, int OverallScore,
     int TechnicalScore, int FundamentalScore, int ValuationScore, int QualityScore,
-    decimal? PE, decimal? ROE, decimal? UpsidePercent, string? ValuationVerdict, string? KeyInsight
+    decimal? PE, decimal? ROE, decimal? UpsidePercent, string? ValuationVerdict, string? KeyInsight,
+    decimal? DividendYield = null
 );
 
 public record RecommendationDashboardDto(
@@ -119,4 +120,11 @@ public record PeerComparisonDto(
     int OverallScore, int TechnicalScore, int FundamentalScore, int ValuationScore, int QualityScore,
     decimal? PE, decimal? PB, decimal? ROE, decimal? DebtToEquity, decimal? DividendYield,
     decimal? MarketCap, decimal? UpsidePercent, int? PiotroskiScore
+);
+
+public record ShareholdingDto(
+    decimal? PromoterHolding,
+    decimal? FIIHolding,
+    decimal? DIIHolding,
+    decimal? PublicHolding
 );

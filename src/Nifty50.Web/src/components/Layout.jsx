@@ -35,8 +35,12 @@ export default function Layout() {
 
   const handleRefresh = async () => {
     setRefreshing(true);
-    try { await refreshData(); } catch (e) { console.error(e); }
-    setTimeout(() => setRefreshing(false), 2000);
+    try { 
+      await refreshData(); 
+      const r = await getAdminHealth();
+      setLastRefresh(r.data?.lastRefreshAt ? new Date(r.data.lastRefreshAt) : null);
+    } catch (e) { console.error(e); }
+    finally { setRefreshing(false); }
   };
 
   return (
@@ -71,7 +75,7 @@ export default function Layout() {
 
       {/* Mobile Bottom Navigation */}
       <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-[#1e293b]/95 backdrop-blur-xl border-t border-slate-700/50 z-50 flex justify-around items-center h-16 pb-safe">
-        {navItems.map(item => (
+        {navItems.slice(0, 5).map(item => (
           <NavLink key={item.path} to={item.path}
             className={({ isActive }) =>
               `flex flex-col items-center justify-center w-full h-full space-y-1 transition-colors ${

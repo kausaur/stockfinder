@@ -25,6 +25,15 @@ export default function App() {
           <Route path="/compare/:id" element={<Compare />} />
           <Route path="/settings" element={<Settings />} />
           <Route path="/admin" element={<Admin />} />
+          <Route path="*" element={
+            <div className="flex-1 flex items-center justify-center p-8">
+              <div className="text-center">
+                <h1 className="text-4xl font-bold text-white mb-4">404</h1>
+                <p className="text-slate-400 mb-6">Page not found</p>
+                <a href="/" className="bg-blue-600 text-white px-6 py-2 rounded-lg font-medium hover:bg-blue-700 transition-colors">Return Home</a>
+              </div>
+            </div>
+          } />
         </Route>
       </Routes>
     </BrowserRouter>

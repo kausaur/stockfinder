@@ -24,7 +24,7 @@ const Recommendations = () => {
   const renderStockRow = (stock) => (
     <div key={stock.stockId} className="flex justify-between items-center p-3 border-b border-gray-100 hover:bg-gray-50 transition-colors">
       <div>
-        <Link to={`/stock/${stock.stockId}`} className="font-semibold text-primary hover:underline">{stock.symbol}</Link>
+        <Link to={`/stocks/${stock.stockId}`} className="font-semibold text-primary hover:underline">{stock.symbol}</Link>
         <div className="text-xs text-gray-500">{stock.companyName}</div>
       </div>
       <div className="text-right">
@@ -61,7 +61,7 @@ const Recommendations = () => {
             Top Bullish Opportunities
           </h2>
           <div className="space-y-1">
-            {data.topBullish.length > 0 ? data.topBullish.map(renderStockRow) : <div className="text-sm text-gray-500">No bullish signals</div>}
+            {data.topBullish?.length > 0 ? data.topBullish.map(renderStockRow) : <div className="text-sm text-gray-500">No bullish signals</div>}
           </div>
         </div>
 
@@ -73,7 +73,7 @@ const Recommendations = () => {
           </h2>
           <div className="text-xs text-gray-500 mb-2">High Quality & Undervalued</div>
           <div className="space-y-1">
-            {data.valueOpportunities.length > 0 ? data.valueOpportunities.map(renderStockRow) : <div className="text-sm text-gray-500">No value opportunities currently</div>}
+            {data.valueOpportunities?.length > 0 ? data.valueOpportunities.map(renderStockRow) : <div className="text-sm text-gray-500">No value opportunities currently</div>}
           </div>
         </div>
 
@@ -84,7 +84,7 @@ const Recommendations = () => {
             Top Bearish Signals
           </h2>
           <div className="space-y-1">
-            {data.bottomBearish.length > 0 ? data.bottomBearish.map(renderStockRow) : <div className="text-sm text-gray-500">No bearish signals</div>}
+            {data.bottomBearish?.length > 0 ? data.bottomBearish.map(renderStockRow) : <div className="text-sm text-gray-500">No bearish signals</div>}
           </div>
         </div>
       </div>
@@ -92,11 +92,11 @@ const Recommendations = () => {
       <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 mt-6">
         <h2 className="text-xl font-bold mb-4">Sector Heatmap</h2>
         <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4">
-          {data.sectorAverages.map(sector => (
+          {data.sectorAverages && data.sectorAverages.map(sector => (
             <div key={sector.sector} className={`p-4 rounded-lg text-center ${sector.averageChangePercent > 0 ? 'bg-green-50 border border-green-100' : sector.averageChangePercent < 0 ? 'bg-red-50 border border-red-100' : 'bg-gray-50 border border-gray-200'}`}>
               <div className="text-sm font-semibold truncate" title={sector.sector}>{sector.sector}</div>
               <div className={`text-lg font-bold ${sector.averageChangePercent > 0 ? 'text-green-700' : sector.averageChangePercent < 0 ? 'text-red-700' : 'text-gray-600'}`}>
-                {sector.averageChangePercent > 0 ? '+' : ''}{sector.averageChangePercent.toFixed(2)}%
+                {sector.averageChangePercent > 0 ? '+' : ''}{sector.averageChangePercent?.toFixed(2) ?? '0.00'}%
               </div>
               <div className="text-xs text-gray-500 mt-1">{sector.stockCount} stocks</div>
             </div>

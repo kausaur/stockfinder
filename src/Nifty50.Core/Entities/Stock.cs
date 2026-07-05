@@ -26,5 +26,4 @@ public class Stock : BaseEntity
     public ICollection<IntrinsicValuation> IntrinsicValuations { get; set; } = new List<IntrinsicValuation>();
     public ICollection<QualityMetric> QualityMetrics { get; set; } = new List<QualityMetric>();
     public ICollection<ScoreHistory> ScoreHistories { get; set; } = new List<ScoreHistory>();
-    public ICollection<IndexMembership> IndexMemberships { get; set; } = new List<IndexMembership>();
 }

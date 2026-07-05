@@ -8,6 +8,7 @@ The Data Refresh Flow is the heart of the Nifty50 Analyzer's automated data harv
 sequenceDiagram
     participant Worker as DataRefreshService
     participant Repo as StockRepository
+    participant IndianAPI as IndianAPI.in
     participant Yahoo as Yahoo Finance API
     participant GNews as GNews API
     participant Engine as AnalysisEngine
@@ -18,13 +19,21 @@ sequenceDiagram
     Repo-->>Worker: Stock Id
     
     %% Metadata Fetching
-    Worker->>Yahoo: Fetch Metadata (Sector, MarketCap, SharesOutstanding, etc.)
-    Yahoo-->>Worker: JSON Metadata
+    Worker->>IndianAPI: Fetch Metadata (Sector, MarketCap, SharesOutstanding, etc.)
+    IndianAPI-->>Worker: JSON Metadata
+    opt On IndianAPI Failure
+        Worker->>Yahoo: Fetch Metadata (Fallback)
+        Yahoo-->>Worker: JSON Metadata
+    end
     Worker->>Repo: Update Stock entity
     
     %% Price Data Fetching
-    Worker->>Yahoo: Fetch Historical Prices (incremental from last date)
-    Yahoo-->>Worker: JSON Price Data
+    Worker->>IndianAPI: Fetch Historical Prices (incremental from last date)
+    IndianAPI-->>Worker: JSON Price Data
+    opt On IndianAPI Failure
+        Worker->>Yahoo: Fetch Historical Prices (Fallback)
+        Yahoo-->>Worker: JSON Price Data
+    end
     Worker->>Repo: Upsert StockPrices
     
     %% Dividends
@@ -33,12 +42,26 @@ sequenceDiagram
     Worker->>Repo: Upsert Dividends
     
     %% Fundamentals
-    Worker->>Yahoo: Fetch Financial Statements (Income, Balance, CashFlow)
-    Yahoo-->>Worker: JSON Statements
+    Worker->>IndianAPI: Fetch Financial Statements (Income, Balance, CashFlow)
+    IndianAPI-->>Worker: JSON Statements
+    opt On IndianAPI Failure
+        Worker->>Yahoo: Fetch Financial Statements (Fallback)
+        Yahoo-->>Worker: JSON Statements
+    end
     Worker->>Repo: Upsert FinancialStatements
+    
+    Worker->>IndianAPI: Fetch Institutional Shareholding (Promoter, FII, DII)
+    IndianAPI-->>Worker: JSON Shareholding Data
+
     Worker->>Worker: Calculate FundamentalMetrics snapshot (P/E, ROE, etc.)
     Worker->>Repo: Insert FundamentalMetrics
     
+    Worker->>Worker: Calculate Intrinsic Value (Fair Value, Graham Number)
+    Worker->>Repo: Upsert IntrinsicValuation
+
+    Worker->>Worker: Assess Quality (Piotroski, Altman Z, Shareholding)
+    Worker->>Repo: Upsert QualityMetric
+
     %% Technicals
     Worker->>Repo: Get Last 30 Days Prices
     Repo-->>Worker: StockPrice List

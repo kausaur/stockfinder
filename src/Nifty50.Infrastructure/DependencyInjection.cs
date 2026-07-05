@@ -62,6 +62,10 @@ public static class DependencyInjection
         services.AddHttpClient<IYahooCookieManager, YahooCookieManager>()
             .ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler { UseCookies = false })
             .AddPolicyHandler(retryPolicy);
+            
+        // IndianAPI as primary real-time data provider
+        services.AddHttpClient<IIndianMarketDataService, IndianApiService>()
+            .AddPolicyHandler(retryPolicy);
         services.AddHttpClient<IStockDataService, YahooFinanceService>()
             .ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler { UseCookies = false })
             .AddPolicyHandler(retryPolicy);

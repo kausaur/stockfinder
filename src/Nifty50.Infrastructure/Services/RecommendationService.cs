@@ -18,28 +18,37 @@ public class RecommendationService : IRecommendationService
     public async Task<RecommendationDashboardDto> GetDashboardAsync()
     {
         var activeStocks = await _db.Stocks.Where(s => s.IsActive).ToListAsync();
-        var analyses = await _db.StockAnalyses.Include(a => a.Stock).ToListAsync();
         
-        // Only latest analyses
-        var latestAnalyses = analyses
-            .GroupBy(a => a.StockId)
-            .Select(g => g.OrderByDescending(a => a.AnalyzedAt).First())
-            .ToList();
+        // Fetch latest analysis per active stock using a projection
+        var latestAnalyses = await _db.Stocks
+            .Where(s => s.IsActive)
+            .Select(s => s.StockAnalyses.OrderByDescending(a => a.AnalyzedAt).FirstOrDefault())
+            .Where(a => a != null)
+            .ToListAsync();
+            
+        // Link navigation properties manually since Include is lost in projection
+        foreach(var a in latestAnalyses) 
+        {
+            a!.Stock = activeStocks.FirstOrDefault(s => s.Id == a.StockId);
+        }
+        latestAnalyses.RemoveAll(a => a.Stock == null);
 
         // Get latest intrinsic valuation and quality for extra details
-        var valuations = await _db.IntrinsicValuations
-            .GroupBy(v => v.StockId)
-            .Select(g => g.OrderByDescending(v => v.ComputedAt).First())
-            .ToDictionaryAsync(v => v.StockId);
+        var valuations = await _db.Stocks
+            .Where(s => s.IsActive)
+            .Select(s => s.IntrinsicValuations.OrderByDescending(v => v.ComputedAt).FirstOrDefault())
+            .Where(v => v != null)
+            .ToDictionaryAsync(v => v!.StockId);
             
-        var qualities = await _db.QualityMetrics
-            .GroupBy(q => q.StockId)
-            .Select(g => g.OrderByDescending(q => q.AsOfDate).First())
-            .ToDictionaryAsync(q => q.StockId);
+        var qualities = await _db.Stocks
+            .Where(s => s.IsActive)
+            .Select(s => s.QualityMetrics.OrderByDescending(q => q.AsOfDate).FirstOrDefault())
+            .Where(q => q != null)
+            .ToDictionaryAsync(q => q!.StockId);
 
         var recommendations = latestAnalyses.Select(a =>
         {
-            valuations.TryGetValue(a.StockId, out var v);
+            valuations.TryGetValue(a!.StockId, out var v);
             qualities.TryGetValue(a.StockId, out var q);
             return MapToRecommendationDto(a, v, q);
         }).ToList();
@@ -87,33 +96,35 @@ public class RecommendationService : IRecommendationService
 
     public async Task<List<StockRecommendationDto>> ScreenStocksAsync(ScreenerFilters filters)
     {
-        var analysesQuery = _db.StockAnalyses.Include(a => a.Stock).AsQueryable();
+        var activeStocks = await _db.Stocks.Where(s => s.IsActive).ToListAsync();
         
-        // In practice we'd just want the latest per stock. Since this is an EF query, we could fetch all latest first.
-        var latestAnalyses = await analysesQuery
-            .GroupBy(a => a.StockId)
-            .Select(g => g.OrderByDescending(a => a.AnalyzedAt).FirstOrDefault())
+        var latestAnalyses = await _db.Stocks
+            .Where(s => s.IsActive)
+            .Select(s => s.StockAnalyses.OrderByDescending(a => a.AnalyzedAt).FirstOrDefault())
             .Where(a => a != null)
             .ToListAsync();
             
+        foreach(var a in latestAnalyses) 
+            a!.Stock = activeStocks.First(s => s.Id == a.StockId);
+            
         var stockIds = latestAnalyses.Select(a => a!.StockId).ToList();
         
-        var valuations = await _db.IntrinsicValuations
-            .Where(v => stockIds.Contains(v.StockId))
-            .GroupBy(v => v.StockId)
-            .Select(g => g.OrderByDescending(v => v.ComputedAt).FirstOrDefault())
+        var valuations = await _db.Stocks
+            .Where(s => s.IsActive)
+            .Select(s => s.IntrinsicValuations.OrderByDescending(v => v.ComputedAt).FirstOrDefault())
+            .Where(v => v != null)
             .ToDictionaryAsync(v => v!.StockId);
             
-        var qualities = await _db.QualityMetrics
-            .Where(q => stockIds.Contains(q.StockId))
-            .GroupBy(q => q.StockId)
-            .Select(g => g.OrderByDescending(q => q.AsOfDate).FirstOrDefault())
+        var qualities = await _db.Stocks
+            .Where(s => s.IsActive)
+            .Select(s => s.QualityMetrics.OrderByDescending(q => q.AsOfDate).FirstOrDefault())
+            .Where(q => q != null)
             .ToDictionaryAsync(q => q!.StockId);
             
-        var fundamentals = await _db.FundamentalMetrics
-            .Where(f => stockIds.Contains(f.StockId))
-            .GroupBy(f => f.StockId)
-            .Select(g => g.OrderByDescending(f => f.PeriodEndDate).FirstOrDefault())
+        var fundamentals = await _db.Stocks
+            .Where(s => s.IsActive)
+            .Select(s => s.FundamentalMetrics.OrderByDescending(f => f.PeriodEndDate).FirstOrDefault())
+            .Where(f => f != null)
             .ToDictionaryAsync(f => f!.StockId);
 
         var recommendations = latestAnalyses.Select(a =>
@@ -163,7 +174,7 @@ public class RecommendationService : IRecommendationService
             "Score" => results.OrderByDescending(r => r.OverallScore),
             "PE" => results.OrderBy(r => r.PE ?? 9999),
             "ROE" => results.OrderByDescending(r => r.ROE ?? -9999),
-            "DivYield" => results.OrderByDescending(r => r.UpsidePercent ?? -9999), // proxy since DivYield isn't on DTO root
+            "DivYield" => results.OrderByDescending(r => r.DividendYield ?? -9999),
             _ => results.OrderByDescending(r => r.OverallScore)
         };
 
@@ -232,12 +243,13 @@ public class RecommendationService : IRecommendationService
     private StockRecommendationDto MapToRecommendationDto(StockAnalysis a, IntrinsicValuation? v, QualityMetric? q, FundamentalMetric? f = null)
     {
         return new StockRecommendationDto(
-            a.StockId, a.Stock.Symbol, a.Stock.CompanyName, a.Stock.Sector,
-            a.Stock.CurrentPrice, a.Stock.DayChangePercent,
+            a.StockId, a.Stock?.Symbol ?? "", a.Stock?.CompanyName ?? "", a.Stock?.Sector,
+            a.Stock?.CurrentPrice, a.Stock?.DayChangePercent,
             a.OverallSignal.ToString(), a.OverallScore,
             a.TechnicalScore, a.FundamentalScore, a.ValuationScore ?? 0, a.QualityScore ?? 0,
-            f?.PERatio, f?.ROE ?? q?.ROCELatest, v?.UpsidePercent, v?.ValuationVerdict,
-            a.Reasoning
+            f?.PERatio, f?.ROE ?? q?.ROICLatest, v?.UpsidePercent, v?.ValuationVerdict,
+            a.Reasoning,
+            f?.DividendYield
         );
     }
 }

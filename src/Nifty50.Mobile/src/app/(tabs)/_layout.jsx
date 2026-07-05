@@ -41,6 +41,7 @@ export default function TabLayout() {
                 name="recommendations"
                 options={{
                     title: 'Picks',
+                    headerShown: false,
                     tabBarLabel: 'Picks',
                     tabBarIcon: ({ color, size }) => <Ionicons name="star" size={size} color={color} />
                 }}
@@ -49,6 +50,7 @@ export default function TabLayout() {
                 name="screener"
                 options={{
                     title: 'Screener',
+                    headerShown: false,
                     tabBarLabel: 'Screener',
                     tabBarIcon: ({ color, size }) => <Ionicons name="search" size={size} color={color} />
                 }}

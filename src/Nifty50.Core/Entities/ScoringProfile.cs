@@ -7,12 +7,12 @@ public class ScoringProfile : BaseEntity
     public bool IsPreset { get; set; }
 
     // Top-level weights (must sum to 100)
-    public int TechnicalWeight { get; set; } = 40;
+    public int TechnicalWeight { get; set; } = 25;
     public int FundamentalWeight { get; set; } = 25;
-    public int SentimentWeight { get; set; } = 20;
-    public int DividendWeight { get; set; } = 15;
-    public int ValuationWeight { get; set; } = 0;
-    public int QualityWeight { get; set; } = 0;
+    public int SentimentWeight { get; set; } = 10;
+    public int DividendWeight { get; set; } = 10;
+    public int ValuationWeight { get; set; } = 15;
+    public int QualityWeight { get; set; } = 15;
 
     // Technical sub-weights (sum to 100 within category)
     public int TechRSIWeight { get; set; } = 20;
@@ -23,13 +23,13 @@ public class ScoringProfile : BaseEntity
     public int TechVolumeWeight { get; set; } = 10;
 
     // Fundamental sub-weights (sum to 100 within category)
-    public int FundValuationWeight { get; set; } = 25;
-    public int FundProfitabilityWeight { get; set; } = 25;
-    public int FundLiquidityWeight { get; set; } = 15;
-    public int FundLeverageWeight { get; set; } = 15;
+    public int FundValuationWeight { get; set; } = 15;
+    public int FundProfitabilityWeight { get; set; } = 15;
+    public int FundLiquidityWeight { get; set; } = 10;
+    public int FundLeverageWeight { get; set; } = 10;
     public int FundGrowthWeight { get; set; } = 20;
-    public int FundROCEWeight { get; set; } = 0;
-    public int FundPEGWeight { get; set; } = 0;
+    public int FundROCEWeight { get; set; } = 15;
+    public int FundPEGWeight { get; set; } = 15;
 
     // Quality sub-weights (sum to 100 within category)
     public int QualPiotroskiWeight { get; set; } = 30;

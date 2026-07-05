@@ -21,7 +21,6 @@ public class AppDbContext : DbContext
     public DbSet<IntrinsicValuation> IntrinsicValuations => Set<IntrinsicValuation>();
     public DbSet<QualityMetric> QualityMetrics => Set<QualityMetric>();
     public DbSet<ScoreHistory> ScoreHistories => Set<ScoreHistory>();
-    public DbSet<IndexMembership> IndexMemberships => Set<IndexMembership>();
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
@@ -40,7 +39,6 @@ public class AppDbContext : DbContext
         modelBuilder.Entity<IntrinsicValuation>().HasQueryFilter(e => !e.IsDeleted);
         modelBuilder.Entity<QualityMetric>().HasQueryFilter(e => !e.IsDeleted);
         modelBuilder.Entity<ScoreHistory>().HasQueryFilter(e => !e.IsDeleted);
-        modelBuilder.Entity<IndexMembership>().HasQueryFilter(e => !e.IsDeleted);
 
         // Stock
         modelBuilder.Entity<Stock>(e =>
@@ -137,12 +135,7 @@ public class AppDbContext : DbContext
             e.HasOne(s => s.Stock).WithMany(st => st.ScoreHistories).HasForeignKey(s => s.StockId).OnDelete(DeleteBehavior.Cascade);
         });
 
-        // IndexMembership
-        modelBuilder.Entity<IndexMembership>(e =>
-        {
-            e.HasIndex(i => new { i.IndexName, i.StockId }).IsUnique().HasFilter("\"IsDeleted\" = false");
-            e.HasOne(i => i.Stock).WithMany(s => s.IndexMemberships).HasForeignKey(i => i.StockId).OnDelete(DeleteBehavior.Cascade);
-        });
+
     }
 
     public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
@@ -207,7 +200,7 @@ public static class SeedData
             new ScoringProfile
             {
                 Name = "Value", IsPreset = true,
-                TechnicalWeight = 15, FundamentalWeight = 60, SentimentWeight = 5, DividendWeight = 20,
+                TechnicalWeight = 15, FundamentalWeight = 35, SentimentWeight = 5, DividendWeight = 10, ValuationWeight = 25, QualityWeight = 10,
                 TechRSIWeight = 35, TechMACDWeight = 10, TechMovingAvgWeight = 20,
                 TechBollingerWeight = 25, TechADXWeight = 5, TechVolumeWeight = 5,
                 FundValuationWeight = 40, FundProfitabilityWeight = 25,
@@ -220,7 +213,7 @@ public static class SeedData
             new ScoringProfile
             {
                 Name = "Income", IsPreset = true,
-                TechnicalWeight = 10, FundamentalWeight = 25, SentimentWeight = 5, DividendWeight = 60,
+                TechnicalWeight = 5, FundamentalWeight = 15, SentimentWeight = 5, DividendWeight = 45, ValuationWeight = 10, QualityWeight = 20,
                 TechRSIWeight = 20, TechMACDWeight = 15, TechMovingAvgWeight = 30,
                 TechBollingerWeight = 15, TechADXWeight = 10, TechVolumeWeight = 10,
                 FundValuationWeight = 20, FundProfitabilityWeight = 30,
@@ -233,7 +226,7 @@ public static class SeedData
             new ScoringProfile
             {
                 Name = "Momentum", IsPreset = true,
-                TechnicalWeight = 55, FundamentalWeight = 20, SentimentWeight = 20, DividendWeight = 5,
+                TechnicalWeight = 45, FundamentalWeight = 15, SentimentWeight = 15, DividendWeight = 5, ValuationWeight = 10, QualityWeight = 10,
                 TechRSIWeight = 15, TechMACDWeight = 30, TechMovingAvgWeight = 20,
                 TechBollingerWeight = 10, TechADXWeight = 20, TechVolumeWeight = 5,
                 FundValuationWeight = 15, FundProfitabilityWeight = 30,
@@ -246,7 +239,7 @@ public static class SeedData
             new ScoringProfile
             {
                 Name = "Quality", IsPreset = true,
-                TechnicalWeight = 15, FundamentalWeight = 55, SentimentWeight = 10, DividendWeight = 20,
+                TechnicalWeight = 10, FundamentalWeight = 20, SentimentWeight = 5, DividendWeight = 15, ValuationWeight = 15, QualityWeight = 35,
                 TechRSIWeight = 20, TechMACDWeight = 20, TechMovingAvgWeight = 25,
                 TechBollingerWeight = 15, TechADXWeight = 10, TechVolumeWeight = 10,
                 FundValuationWeight = 15, FundProfitabilityWeight = 40,
@@ -265,6 +258,10 @@ public static class SeedData
         var presets = await db.ScoringProfiles.Where(p => p.IsPreset).ToListAsync();
         foreach (var p in presets)
         {
+            // Only update if it hasn't been migrated yet (Valuation and Quality weights are exactly 0, which was V1 default)
+            // If an admin has customized these, we should respect their customization.
+            if (p.ValuationWeight != 0 || p.QualityWeight != 0) continue;
+
             switch (p.Name)
             {
                 case "Balanced":

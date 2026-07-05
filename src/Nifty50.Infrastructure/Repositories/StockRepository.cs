@@ -101,15 +101,19 @@ public class StockRepository : IStockRepository
         if (!divList.Any()) return;
         
         var stockId = divList.First().StockId;
-        var dates = divList.Select(d => d.ExDate).ToHashSet();
+        var dates = divList.Select(d => d.ExDate.Date).ToHashSet();
         
         var existing = await _db.Dividends
-            .Where(d => d.StockId == stockId && dates.Contains(d.ExDate))
-            .ToDictionaryAsync(d => d.ExDate);
+            .Where(d => d.StockId == stockId)
+            .ToListAsync();
+            
+        var existingDict = existing
+            .Where(d => dates.Contains(d.ExDate.Date))
+            .ToDictionary(d => d.ExDate.Date);
 
         foreach (var d in divList)
         {
-            if (existing.TryGetValue(d.ExDate, out var e))
+            if (existingDict.TryGetValue(d.ExDate.Date, out var e))
             {
                 e.Amount = d.Amount;
                 _db.Dividends.Update(e);
@@ -242,12 +246,11 @@ public class StockRepository : IStockRepository
             .Where(a => a.IsAlert).OrderByDescending(a => a.OverallScore).AsNoTracking().ToListAsync();
 
     public async Task AddAnalysisAsync(StockAnalysis analysis) { _db.StockAnalyses.Add(analysis); await _db.SaveChangesAsync(); }
+    public async Task AddIntrinsicValuationAsync(IntrinsicValuation valuation) { _db.IntrinsicValuations.Add(valuation); await _db.SaveChangesAsync(); }
 
     public async Task ClearAnalysesAsync() 
     {
-        var analyses = await _db.StockAnalyses.ToListAsync();
-        _db.StockAnalyses.RemoveRange(analyses);
-        await _db.SaveChangesAsync();
+        await _db.StockAnalyses.ExecuteDeleteAsync();
     }
 
     public async Task<DashboardDto> GetDashboardDataAsync()
@@ -301,6 +304,4 @@ public class StockRepository : IStockRepository
     public async Task<List<ScoreHistory>> GetScoreHistoryAsync(Guid stockId, int limit = 100) =>
         await _db.ScoreHistories.Where(s => s.StockId == stockId).OrderByDescending(s => s.RecordedAt).Take(limit).AsNoTracking().ToListAsync();
 
-    public async Task<List<IndexMembership>> GetIndexMembershipsAsync(string indexName) =>
-        await _db.IndexMemberships.Include(i => i.Stock).Where(i => i.IndexName == indexName && i.IsActive).AsNoTracking().ToListAsync();
 }

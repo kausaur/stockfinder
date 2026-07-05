@@ -24,8 +24,10 @@ public class SectorRelativeService : ISectorRelativeService
         
         var lowerSector = sector.ToLowerInvariant();
         return lowerSector.Contains("bank") || 
-               lowerSector.Contains("financial") || 
-               lowerSector.Contains("insurance");
+               (lowerSector.Contains("financial") && !lowerSector.Contains("software") && !lowerSector.Contains("technology") && !lowerSector.Contains("data")) || 
+               lowerSector.Contains("insurance") ||
+               lowerSector.Contains("nbfc") ||
+               lowerSector.Contains("microfinance");
     }
 
     public double ScoreRelativePE(decimal? stockPE, SectorBenchmark? benchmark)

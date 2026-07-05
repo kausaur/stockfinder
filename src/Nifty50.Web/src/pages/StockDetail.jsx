@@ -89,7 +89,7 @@ export default function StockDetail() {
     const handleResize = () => chart.applyOptions({ width: chartRef.current?.clientWidth || 600 });
     window.addEventListener('resize', handleResize);
     return () => { window.removeEventListener('resize', handleResize); chart.remove(); chartInstance.current = null; };
-  }, [id, range, loading]);
+  }, [id, range]);
 
   if (loading) return <div className="flex items-center justify-center h-64"><div className="animate-spin text-4xl">⟳</div></div>;
   if (!stock) return <p className="text-slate-400">Stock not found.</p>;
@@ -203,10 +203,10 @@ export default function StockDetail() {
         {sentiment ? (
           <div>
             <div className="flex flex-col md:flex-row items-start md:items-center gap-4 md:gap-6 mb-4">
-              <div className={`text-2xl md:text-3xl font-bold ${sentiment.sentimentScore > 0.1 ? 'text-emerald-400' : sentiment.sentimentScore < -0.1 ? 'text-red-400' : 'text-slate-400'}`}>
-                {sentiment.sentimentScore > 0.1 ? '😊' : sentiment.sentimentScore < -0.1 ? '😟' : '😐'} {sentiment.overallSentiment}
+              <div className={`text-2xl md:text-3xl font-bold ${(sentiment.sentimentScore || 0) > 0.1 ? 'text-emerald-400' : (sentiment.sentimentScore || 0) < -0.1 ? 'text-red-400' : 'text-slate-400'}`}>
+                {(sentiment.sentimentScore || 0) > 0.1 ? '😊' : (sentiment.sentimentScore || 0) < -0.1 ? '😟' : '😐'} {sentiment.overallSentiment}
               </div>
-              <div className="text-sm text-slate-400">Score: <span className="font-mono font-bold text-white">{sentiment.sentimentScore.toFixed(2)}</span></div>
+              <div className="text-sm text-slate-400">Score: <span className="font-mono font-bold text-white">{sentiment.sentimentScore?.toFixed(2) || 'N/A'}</span></div>
               <div className="flex flex-wrap gap-3 text-xs">
                 <span className="text-emerald-400">✅ {sentiment.positiveCount} positive</span>
                 <span className="text-red-400">❌ {sentiment.negativeCount} negative</span>

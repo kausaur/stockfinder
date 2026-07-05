@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Nifty50.Core.DTOs;
 using Nifty50.Core.Interfaces;
+using Nifty50.Api.Filters;
 
 namespace Nifty50.Api.Controllers;
 
@@ -177,6 +178,7 @@ public class AnalysisController : ControllerBase
     }
 
     [HttpPost("analysis/recalculate")]
+    [ApiKey]
     public async Task<ActionResult> Recalculate() { await _engine.RecalculateAllAsync(); return Ok(new { message = "Recalculation complete" }); }
 }
 
@@ -200,31 +202,51 @@ public class ScoringProfileController : ControllerBase
     public async Task<ActionResult<ScoringProfileDto>> GetActive()
     {
         var p = await _service.GetActiveProfileAsync();
+        if (p == null) return NotFound();
         return Ok(MapProfile(p));
     }
 
     [HttpPut("active")]
+    [ApiKey]
     public async Task<ActionResult> UpdateActive([FromBody] ScoringProfileUpdateDto dto)
     {
-        if (dto.TechnicalWeight + dto.FundamentalWeight + dto.SentimentWeight + dto.DividendWeight + dto.ValuationWeight + dto.QualityWeight != 100)
-            return BadRequest("Weights must sum to 100");
+        if (dto.TechnicalWeight + dto.FundamentalWeight + dto.SentimentWeight + dto.DividendWeight + dto.ValuationWeight + dto.QualityWeight != 100) return BadRequest("Top-level weights must sum to 100");
+        if (dto.TechRSIWeight + dto.TechMACDWeight + dto.TechMovingAvgWeight + dto.TechBollingerWeight + dto.TechADXWeight + dto.TechVolumeWeight != 100) return BadRequest("Technical sub-weights must sum to 100");
+        if (dto.FundValuationWeight + dto.FundProfitabilityWeight + dto.FundLiquidityWeight + dto.FundLeverageWeight + dto.FundGrowthWeight + dto.FundROCEWeight + dto.FundPEGWeight != 100) return BadRequest("Fundamental sub-weights must sum to 100");
+        if (dto.QualPiotroskiWeight + dto.QualAltmanWeight + dto.QualPromoterWeight + dto.QualFIIWeight + dto.QualDividendConsistencyWeight + dto.QualFCFTrendWeight != 100) return BadRequest("Quality sub-weights must sum to 100");
         await _service.UpdateActiveProfileAsync(dto);
         return Ok(new { message = "Profile updated" });
     }
 
     [HttpPost]
+    [ApiKey]
     public async Task<ActionResult<ScoringProfileDto>> Create([FromBody] ScoringProfileDto dto)
     {
-        if (dto.TechnicalWeight + dto.FundamentalWeight + dto.SentimentWeight + dto.DividendWeight + dto.ValuationWeight + dto.QualityWeight != 100)
-            return BadRequest("Weights must sum to 100");
+        if (dto.TechnicalWeight + dto.FundamentalWeight + dto.SentimentWeight + dto.DividendWeight + dto.ValuationWeight + dto.QualityWeight != 100) return BadRequest("Top-level weights must sum to 100");
+        if (dto.TechRSIWeight + dto.TechMACDWeight + dto.TechMovingAvgWeight + dto.TechBollingerWeight + dto.TechADXWeight + dto.TechVolumeWeight != 100) return BadRequest("Technical sub-weights must sum to 100");
+        if (dto.FundValuationWeight + dto.FundProfitabilityWeight + dto.FundLiquidityWeight + dto.FundLeverageWeight + dto.FundGrowthWeight + dto.FundROCEWeight + dto.FundPEGWeight != 100) return BadRequest("Fundamental sub-weights must sum to 100");
+        if (dto.QualPiotroskiWeight + dto.QualAltmanWeight + dto.QualPromoterWeight + dto.QualFIIWeight + dto.QualDividendConsistencyWeight + dto.QualFCFTrendWeight != 100) return BadRequest("Quality sub-weights must sum to 100");
         var profile = await _service.CreateProfileAsync(dto);
-        return Ok(MapProfile(profile));
+        return StatusCode(201, MapProfile(profile));
     }
 
     [HttpPost("{id}/activate")]
-    public async Task<ActionResult> Activate(Guid id) { await _service.ActivateProfileAsync(id); return Ok(new { message = "Profile activated" }); }
+    [ApiKey]
+    public async Task<ActionResult> Activate(Guid id)
+    {
+        try
+        {
+            await _service.ActivateProfileAsync(id);
+            return Ok(new { message = "Profile activated" });
+        }
+        catch (KeyNotFoundException)
+        {
+            return NotFound(new { message = "Profile not found" });
+        }
+    }
 
     [HttpPost("reset")]
+    [ApiKey]
     public async Task<ActionResult> Reset() { await _service.ResetToDefaultAsync(); return Ok(new { message = "Reset to Balanced" }); }
 
     private static ScoringProfileDto MapProfile(Nifty50.Core.Entities.ScoringProfile p) =>
@@ -250,6 +272,7 @@ public class DashboardController : ControllerBase
 
 [ApiController]
 [Route("api/[controller]")]
+[ApiKey]
 public class AdminController : ControllerBase
 {
     private readonly IApiMonitorService _monitor;
@@ -261,12 +284,25 @@ public class AdminController : ControllerBase
 
     [HttpGet("api-calls")]
     public ActionResult<List<ApiCallRecord>> GetApiCalls([FromQuery] string? api, [FromQuery] int limit = 50) =>
-        Ok(_monitor.GetRecentCalls(api, limit));
+        Ok(_monitor.GetRecentCalls(api, Math.Clamp(limit, 1, 1000)));
 
     [HttpPost("/api/refresh")]
-    public async Task<ActionResult> Refresh()
+    public ActionResult Refresh([FromServices] Microsoft.Extensions.DependencyInjection.IServiceScopeFactory scopeFactory)
     {
-        _ = Task.Run(() => _refresh.RefreshAllDataAsync());
+        _ = Task.Run(async () =>
+        {
+            using var scope = scopeFactory.CreateScope();
+            var refresh = scope.ServiceProvider.GetRequiredService<IDataRefreshService>();
+            var logger = scope.ServiceProvider.GetRequiredService<Microsoft.Extensions.Logging.ILogger<AdminController>>();
+            try
+            {
+                await refresh.RefreshAllDataAsync();
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex, "Manual data refresh failed.");
+            }
+        });
         return Ok(new { message = "Refresh started in background" });
     }
 }

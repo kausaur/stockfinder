@@ -47,11 +47,11 @@ export default function RecommendationsScreen() {
         );
     }
 
-    const renderStockCard = (stock, index) => (
+    const renderStockCard = (stock) => (
         <TouchableOpacity
-            key={index}
+            key={stock.stockId}
             className="bg-slate-900 border border-slate-800 rounded-xl p-4 mb-4"
-            onPress={() => router.push(`/stock/${stock.id}`)}
+            onPress={() => router.push(`/stock/${stock.stockId}`)}
         >
             <View className="flex-row justify-between items-start mb-2">
                 <View>
@@ -93,26 +93,26 @@ export default function RecommendationsScreen() {
                 refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#3b82f6" />}
             >
                 <View className="mb-6">
-                    <Text className="text-sm font-semibold text-slate-400 mb-3 uppercase tracking-wider">Strong Buys</Text>
-                    {picks.strongBuys.length > 0 ? 
-                        picks.strongBuys.map(renderStockCard) : 
-                        <Text className="text-slate-500 italic mb-4">No strong buy recommendations currently.</Text>
+                    <Text className="text-sm font-semibold text-slate-400 mb-3 uppercase tracking-wider">Top Bullish</Text>
+                    {picks?.topBullish?.length > 0 ? 
+                        picks.topBullish.map(renderStockCard) : 
+                        <Text className="text-slate-500 italic mb-4">No bullish recommendations currently.</Text>
                     }
                 </View>
 
                 <View className="mb-6">
-                    <Text className="text-sm font-semibold text-slate-400 mb-3 uppercase tracking-wider">Value Picks (High Upside)</Text>
-                    {picks.valuePicks.length > 0 ? 
-                        picks.valuePicks.map(renderStockCard) : 
-                        <Text className="text-slate-500 italic mb-4">No value picks currently.</Text>
+                    <Text className="text-sm font-semibold text-slate-400 mb-3 uppercase tracking-wider">Value Opportunities</Text>
+                    {picks?.valueOpportunities?.length > 0 ? 
+                        picks.valueOpportunities.map(renderStockCard) : 
+                        <Text className="text-slate-500 italic mb-4">No value opportunities currently.</Text>
                     }
                 </View>
 
                 <View className="mb-6">
-                    <Text className="text-sm font-semibold text-slate-400 mb-3 uppercase tracking-wider">Quality Performers</Text>
-                    {picks.qualityPicks.length > 0 ? 
-                        picks.qualityPicks.map(renderStockCard) : 
-                        <Text className="text-slate-500 italic mb-4">No quality picks currently.</Text>
+                    <Text className="text-sm font-semibold text-slate-400 mb-3 uppercase tracking-wider">Bottom Bearish</Text>
+                    {picks?.bottomBearish?.length > 0 ? 
+                        picks.bottomBearish.map(renderStockCard) : 
+                        <Text className="text-slate-500 italic mb-4">No bearish picks currently.</Text>
                     }
                 </View>
                 

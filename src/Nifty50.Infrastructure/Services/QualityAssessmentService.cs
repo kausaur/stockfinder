@@ -13,7 +13,7 @@ public class QualityAssessmentService : IQualityAssessmentService
         _sectorService = sectorService;
     }
 
-    public QualityMetric AssessQuality(Guid stockId, List<FinancialStatement> statements, FundamentalMetric metric, QualityMetric? existingCuratedData)
+    public QualityMetric AssessQuality(Guid stockId, List<FinancialStatement> statements, FundamentalMetric metric, string? sector, decimal? marketCap, QualityMetric? existingCuratedData)
     {
         var quality = new QualityMetric
         {
@@ -30,7 +30,7 @@ public class QualityAssessmentService : IQualityAssessmentService
             ConsecutiveDividendYears = existingCuratedData?.ConsecutiveDividendYears
         };
 
-        quality.ROCELatest = metric.ROIC;
+        quality.ROICLatest = metric.ROIC;
         
         // FCF Trend
         if (metric.FCFGrowthYoY.HasValue)
@@ -41,9 +41,9 @@ public class QualityAssessmentService : IQualityAssessmentService
         }
 
         // Altman Z-Score (Skip for BFSI)
-        if (!_sectorService.IsBFSI(metric.Stock?.Sector))
+        if (!_sectorService.IsBFSI(sector))
         {
-            CalculateAltmanZScore(quality, statements, metric.Stock?.MarketCap);
+            CalculateAltmanZScore(quality, statements, marketCap);
         }
 
         // Piotroski F-Score
@@ -108,22 +108,22 @@ public class QualityAssessmentService : IQualityAssessmentService
         if (previous != null)
         {
             // 3. ROA Improved
-            var currentRoa = (current.NetIncome ?? 0) / (current.TotalAssets ?? 1);
-            var prevRoa = (previous.NetIncome ?? 0) / (previous.TotalAssets ?? 1);
+            var currentRoa = current.TotalAssets > 0 ? (current.NetIncome ?? 0) / current.TotalAssets.Value : 0;
+            var prevRoa = previous.TotalAssets > 0 ? (previous.NetIncome ?? 0) / previous.TotalAssets.Value : 0;
             bool roaImproved = currentRoa > prevRoa;
             if (roaImproved) score++;
             breakdown["RoaImproved"] = roaImproved;
 
             // 5. Long-term Debt / Assets Decreased
-            var currentLev = (current.TotalDebt ?? 0) / (current.TotalAssets ?? 1);
-            var prevLev = (previous.TotalDebt ?? 0) / (previous.TotalAssets ?? 1);
+            var currentLev = current.TotalAssets > 0 ? (current.TotalDebt ?? 0) / current.TotalAssets.Value : 0;
+            var prevLev = previous.TotalAssets > 0 ? (previous.TotalDebt ?? 0) / previous.TotalAssets.Value : 0;
             bool leverageDecreased = currentLev < prevLev;
             if (leverageDecreased) score++;
             breakdown["LeverageDecreased"] = leverageDecreased;
 
             // 6. Current Ratio Improved
-            var currentCr = (current.CurrentAssets ?? 0) / (current.CurrentLiabilities ?? 1);
-            var prevCr = (previous.CurrentAssets ?? 0) / (previous.CurrentLiabilities ?? 1);
+            var currentCr = current.CurrentLiabilities > 0 ? (current.CurrentAssets ?? 0) / current.CurrentLiabilities.Value : 0;
+            var prevCr = previous.CurrentLiabilities > 0 ? (previous.CurrentAssets ?? 0) / previous.CurrentLiabilities.Value : 0;
             bool crImproved = currentCr > prevCr;
             if (crImproved) score++;
             breakdown["CurrentRatioImproved"] = crImproved;
@@ -134,15 +134,15 @@ public class QualityAssessmentService : IQualityAssessmentService
             breakdown["NoShareDilution"] = noDilution;
 
             // 8. Gross Margin Improved
-            var currentGm = (current.GrossProfit ?? 0) / (current.TotalRevenue ?? 1);
-            var prevGm = (previous.GrossProfit ?? 0) / (previous.TotalRevenue ?? 1);
+            var currentGm = current.TotalRevenue > 0 ? (current.GrossProfit ?? 0) / current.TotalRevenue.Value : 0;
+            var prevGm = previous.TotalRevenue > 0 ? (previous.GrossProfit ?? 0) / previous.TotalRevenue.Value : 0;
             bool gmImproved = currentGm > prevGm;
             if (gmImproved) score++;
             breakdown["GrossMarginImproved"] = gmImproved;
 
             // 9. Asset Turnover Improved
-            var currentAto = (current.TotalRevenue ?? 0) / (current.TotalAssets ?? 1);
-            var prevAto = (previous.TotalRevenue ?? 0) / (previous.TotalAssets ?? 1);
+            var currentAto = current.TotalAssets > 0 ? (current.TotalRevenue ?? 0) / current.TotalAssets.Value : 0;
+            var prevAto = previous.TotalAssets > 0 ? (previous.TotalRevenue ?? 0) / previous.TotalAssets.Value : 0;
             bool atoImproved = currentAto > prevAto;
             if (atoImproved) score++;
             breakdown["AssetTurnoverImproved"] = atoImproved;

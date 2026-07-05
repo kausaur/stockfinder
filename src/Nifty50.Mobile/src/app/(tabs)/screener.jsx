@@ -8,10 +8,8 @@ export default function ScreenerScreen() {
     const [results, setResults] = useState([]);
     const [loading, setLoading] = useState(false);
     const [filters, setFilters] = useState({
-        minOverallScore: '60',
-        minValuationScore: '',
-        minQualityScore: '',
-        signal: 'Buy',
+        MinScore: '60',
+        Signals: 'Buy',
     });
     const router = useRouter();
 
@@ -19,10 +17,8 @@ export default function ScreenerScreen() {
         setLoading(true);
         try {
             const cleanFilters = {};
-            if (filters.minOverallScore) cleanFilters.minOverallScore = parseInt(filters.minOverallScore);
-            if (filters.minValuationScore) cleanFilters.minValuationScore = parseInt(filters.minValuationScore);
-            if (filters.minQualityScore) cleanFilters.minQualityScore = parseInt(filters.minQualityScore);
-            if (filters.signal) cleanFilters.signal = filters.signal;
+            if (filters.MinScore) cleanFilters.MinScore = parseInt(filters.MinScore);
+            if (filters.Signals) cleanFilters.Signals = filters.Signals.split(',').map(s => s.trim());
             
             const res = await api.getScreenerResults(cleanFilters);
             setResults(res.data);
@@ -41,11 +37,11 @@ export default function ScreenerScreen() {
         setFilters(prev => ({ ...prev, [key]: value }));
     };
 
-    const renderStockCard = (stock, index) => (
+    const renderStockCard = (stock) => (
         <TouchableOpacity
-            key={index}
+            key={stock.stockId}
             className="bg-slate-900 border border-slate-800 rounded-xl p-4 mb-3"
-            onPress={() => router.push(`/stock/${stock.id}`)}
+            onPress={() => router.push(`/stock/${stock.stockId}`)}
         >
             <View className="flex-row justify-between items-center">
                 <View>
@@ -75,19 +71,19 @@ export default function ScreenerScreen() {
                         <TextInput 
                             className="bg-slate-800 text-white p-2 rounded-lg text-sm"
                             keyboardType="numeric"
-                            value={filters.minOverallScore}
-                            onChangeText={v => updateFilter('minOverallScore', v)}
+                            value={filters.MinScore}
+                            onChangeText={v => updateFilter('MinScore', v)}
                             placeholder="e.g. 60"
                             placeholderTextColor="#64748b"
                         />
                     </View>
                     <View className="flex-1">
-                        <Text className="text-xs text-slate-400 mb-1">Signal</Text>
+                        <Text className="text-xs text-slate-400 mb-1">Signals</Text>
                         <TextInput 
                             className="bg-slate-800 text-white p-2 rounded-lg text-sm"
-                            value={filters.signal}
-                            onChangeText={v => updateFilter('signal', v)}
-                            placeholder="Buy / Sell"
+                            value={filters.Signals}
+                            onChangeText={v => updateFilter('Signals', v)}
+                            placeholder="Buy, Strong Buy"
                             placeholderTextColor="#64748b"
                         />
                     </View>

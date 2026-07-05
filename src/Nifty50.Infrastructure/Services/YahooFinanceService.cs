@@ -117,7 +117,7 @@ public class YahooFinanceService : IStockDataService
                 var date = DateTimeOffset.FromUnixTimeSeconds(divObj.GetProperty("date").GetInt64()).UtcDateTime;
                 divs.Add(new Dividend
                 {
-                    ExDate = DateTime.SpecifyKind(date, DateTimeKind.Utc),
+                    ExDate = DateTime.SpecifyKind(date.Date, DateTimeKind.Utc),
                     Amount = divObj.GetProperty("amount").GetDecimal()
                 });
             }

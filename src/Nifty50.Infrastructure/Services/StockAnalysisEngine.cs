@@ -2,6 +2,7 @@ using System.Text.Json;
 using Nifty50.Core.Entities;
 using Nifty50.Core.Enums;
 using Nifty50.Core.Interfaces;
+using Microsoft.Extensions.Logging;
 
 namespace Nifty50.Infrastructure.Services;
 
@@ -9,11 +10,13 @@ public class StockAnalysisEngine : IStockAnalysisEngine
 {
     private readonly IStockRepository _repo;
     private readonly IScoringProfileService _profileService;
+    private readonly Microsoft.Extensions.Logging.ILogger<StockAnalysisEngine> _logger;
 
-    public StockAnalysisEngine(IStockRepository repo, IScoringProfileService profileService)
+    public StockAnalysisEngine(IStockRepository repo, IScoringProfileService profileService, Microsoft.Extensions.Logging.ILogger<StockAnalysisEngine> logger)
     {
         _repo = repo;
         _profileService = profileService;
+        _logger = logger;
     }
 
     public async Task<StockAnalysis> AnalyzeStockAsync(Guid stockId)
@@ -91,7 +94,9 @@ public class StockAnalysisEngine : IStockAnalysisEngine
             ValuationScore = valScore,
             QualityScore = qualScore,
             DividendScore = divScore,
-            SentimentScore = sentScore
+            SentimentScore = sentScore,
+            ScoringProfileName = profile.Name,
+            Signal = overallSignal.ToString()
         };
         await _repo.AddScoreHistoryAsync(history);
 
@@ -113,7 +118,10 @@ public class StockAnalysisEngine : IStockAnalysisEngine
                     alerts.Add(analysis);
                 }
             } 
-            catch { /* Skip failed analyses */ }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to analyze stock {StockId}", stock.Id);
+            }
         }
         return alerts;
     }
@@ -216,6 +224,10 @@ public class StockAnalysisEngine : IStockAnalysisEngine
             totalWeightUsed += p.TechVolumeWeight;
         }
 
+        // Normalize if not all sub-indicators had data
+        if (totalWeightUsed > 0 && totalWeightUsed < 100)
+            score = score * (100.0 / totalWeightUsed);
+
         // 52-Week proximity bonus (not weighted by sub-weights, acts as a bonus)
         if (currentPrice.HasValue && week52High.HasValue && week52Low.HasValue && week52High > week52Low)
         {
@@ -234,10 +246,6 @@ public class StockAnalysisEngine : IStockAnalysisEngine
             score = score * 0.90 + w52Score * 0.10;
         }
 
-        // Normalize if not all sub-indicators had data
-        if (totalWeightUsed > 0 && totalWeightUsed < 100)
-            score = score * (100.0 / totalWeightUsed);
-
         return Math.Clamp((int)score, 0, 100);
     }
 
@@ -245,12 +253,23 @@ public class StockAnalysisEngine : IStockAnalysisEngine
     {
         if (f == null) return 50;
         double score = 0;
+        double totalWeight = 0;
 
         // Valuation (P/E ratio benchmarks for Indian large-cap stocks)
         double valScore = 50;
         if (f.PERatio.HasValue)
             valScore = f.PERatio < 12 ? 90 : f.PERatio < 20 ? 75 : f.PERatio < 30 ? 50 : f.PERatio < 45 ? 30 : 15;
         score += p.FundValuationWeight / 100.0 * valScore;
+        totalWeight += p.FundValuationWeight;
+
+        // PEG Ratio
+        if (p.FundPEGWeight > 0 && f.PERatio.HasValue && f.EarningsGrowthYoY.HasValue && f.EarningsGrowthYoY > 0)
+        {
+            var peg = f.PERatio.Value / f.EarningsGrowthYoY.Value;
+            double pegScore = peg < 1 ? 95 : peg < 1.5m ? 80 : peg < 2 ? 60 : peg < 3 ? 30 : 10;
+            score += p.FundPEGWeight / 100.0 * pegScore;
+            totalWeight += p.FundPEGWeight;
+        }
 
         // Profitability (ROE benchmarks)
         double profScore = 50;
@@ -260,18 +279,34 @@ public class StockAnalysisEngine : IStockAnalysisEngine
         if (f.OperatingMargin.HasValue)
             profScore = Math.Min(100, profScore + (f.OperatingMargin > 20 ? 10 : f.OperatingMargin > 10 ? 5 : 0));
         score += p.FundProfitabilityWeight / 100.0 * profScore;
+        totalWeight += p.FundProfitabilityWeight;
+
+        // ROCE (Return on Capital Employed)
+        if (p.FundROCEWeight > 0 && f.ROIC.HasValue)
+        {
+            double roceScore = 50;
+            if (f.ROIC > 20) roceScore = 90;
+            else if (f.ROIC > 15) roceScore = 75;
+            else if (f.ROIC > 10) roceScore = 55;
+            else if (f.ROIC > 5) roceScore = 30;
+            else roceScore = 15;
+            score += p.FundROCEWeight / 100.0 * roceScore;
+            totalWeight += p.FundROCEWeight;
+        }
 
         // Liquidity (Current Ratio)
         double liqScore = 50;
         if (f.CurrentRatio.HasValue)
-            liqScore = f.CurrentRatio > 2.5m ? 85 : f.CurrentRatio > 1.5m ? 70 : f.CurrentRatio > 1 ? 50 : 20;
+            liqScore = f.CurrentRatio > 2.5m ? 85 : f.CurrentRatio > 1.5m ? 70 : f.CurrentRatio > 1m ? 50 : 20;
         score += p.FundLiquidityWeight / 100.0 * liqScore;
+        totalWeight += p.FundLiquidityWeight;
 
         // Leverage (Debt-to-Equity)
         double levScore = 50;
         if (f.DebtToEquity.HasValue)
             levScore = f.DebtToEquity < 0.2m ? 90 : f.DebtToEquity < 0.5m ? 75 : f.DebtToEquity < 1m ? 55 : f.DebtToEquity < 2m ? 30 : 10;
         score += p.FundLeverageWeight / 100.0 * levScore;
+        totalWeight += p.FundLeverageWeight;
 
         // Growth (Earnings Growth YoY)
         double growScore = 50;
@@ -281,6 +316,12 @@ public class StockAnalysisEngine : IStockAnalysisEngine
         if (f.RevenueGrowthYoY.HasValue)
             growScore = Math.Min(100, growScore + (f.RevenueGrowthYoY > 20 ? 8 : f.RevenueGrowthYoY > 10 ? 4 : 0));
         score += p.FundGrowthWeight / 100.0 * growScore;
+        totalWeight += p.FundGrowthWeight;
+
+        if (totalWeight > 0 && totalWeight < 100)
+            score = score * (100.0 / totalWeight);
+
+        if (totalWeight == 0) return 50;
 
         return Math.Clamp((int)score, 0, 100);
     }
@@ -313,21 +354,74 @@ public class StockAnalysisEngine : IStockAnalysisEngine
     private static int CalculateQualityScore(QualityMetric? q, ScoringProfile p)
     {
         if (q == null) return 50;
-        double score = 50;
+        double score = 0;
+        double totalWeight = 0;
 
-        if (q.PiotroskiFScore.HasValue)
+        if (p.QualPiotroskiWeight > 0 && q.PiotroskiFScore.HasValue)
         {
             var pio = q.PiotroskiFScore.Value;
-            if (pio >= 8) score = 95;
-            else if (pio >= 7) score = 85;
-            else if (pio >= 5) score = 60;
-            else if (pio >= 3) score = 40;
-            else score = 20;
+            double s = 20;
+            if (pio >= 8) s = 95;
+            else if (pio >= 7) s = 85;
+            else if (pio >= 5) s = 60;
+            else if (pio >= 3) s = 40;
+            score += p.QualPiotroskiWeight / 100.0 * s;
+            totalWeight += p.QualPiotroskiWeight;
         }
 
-        // Apply bonus/penalty based on FCF trend
-        if (q.FCFTrend == "Positive_Growing") score = Math.Min(100, score + 10);
-        else if (q.FCFTrend == "Negative") score = Math.Max(0, score - 15);
+        if (p.QualAltmanWeight > 0 && q.AltmanZScore.HasValue)
+        {
+            double s = 20;
+            if (q.AltmanZone == "Safe") s = 90;
+            else if (q.AltmanZone == "Grey") s = 50;
+            score += p.QualAltmanWeight / 100.0 * s;
+            totalWeight += p.QualAltmanWeight;
+        }
+
+        if (p.QualPromoterWeight > 0 && (q.PromoterHoldingTrend != null || q.PromoterHolding.HasValue))
+        {
+            double s = 50;
+            if (q.PromoterHoldingTrend == "Increasing") s = 85;
+            else if (q.PromoterHoldingTrend == "Decreasing") s = 20;
+            else if (q.PromoterHolding.HasValue && q.PromoterHolding > 50) s = 70;
+            score += p.QualPromoterWeight / 100.0 * s;
+            totalWeight += p.QualPromoterWeight;
+        }
+
+        if (p.QualFIIWeight > 0 && (q.FIIHoldingTrend != null || q.FIIHolding.HasValue))
+        {
+            double s = 50;
+            if (q.FIIHoldingTrend == "Increasing") s = 80;
+            else if (q.FIIHoldingTrend == "Decreasing") s = 30;
+            score += p.QualFIIWeight / 100.0 * s;
+            totalWeight += p.QualFIIWeight;
+        }
+
+        if (p.QualDividendConsistencyWeight > 0 && q.ConsecutiveDividendYears.HasValue)
+        {
+            double s = 20;
+            var yrs = q.ConsecutiveDividendYears.Value;
+            if (yrs >= 10) s = 95;
+            else if (yrs >= 5) s = 75;
+            else if (yrs >= 3) s = 50;
+            score += p.QualDividendConsistencyWeight / 100.0 * s;
+            totalWeight += p.QualDividendConsistencyWeight;
+        }
+
+        if (p.QualFCFTrendWeight > 0 && q.FCFTrend != null)
+        {
+            double s = 50;
+            if (q.FCFTrend == "Positive_Growing") s = 90;
+            else if (q.FCFTrend == "Negative") s = 20;
+            else if (q.FCFTrend == "Positive_Flat") s = 60;
+            score += p.QualFCFTrendWeight / 100.0 * s;
+            totalWeight += p.QualFCFTrendWeight;
+        }
+
+        if (totalWeight > 0 && totalWeight < 100)
+            score = score * (100.0 / totalWeight);
+
+        if (totalWeight == 0) return 50;
 
         return Math.Clamp((int)score, 0, 100);
     }

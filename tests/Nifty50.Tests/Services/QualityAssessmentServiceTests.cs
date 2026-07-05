@@ -37,7 +37,7 @@ public class QualityAssessmentServiceTests
         };
 
         // Act
-        var result = _service.AssessQuality(stockId, statements, metric, null);
+        var result = _service.AssessQuality(stockId, statements, metric, null, 100000m, null);
 
         // Assert
         Assert.NotNull(result);

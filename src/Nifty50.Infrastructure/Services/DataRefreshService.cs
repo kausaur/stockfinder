@@ -115,6 +115,7 @@ public class DataRefreshService : BackgroundService, IDataRefreshService
         var analysisEngine = scope.ServiceProvider.GetRequiredService<IStockAnalysisEngine>();
         var intrinsicValueService = scope.ServiceProvider.GetRequiredService<IIntrinsicValueService>();
         var qualityAssessmentService = scope.ServiceProvider.GetRequiredService<IQualityAssessmentService>();
+        var indianApiService = scope.ServiceProvider.GetRequiredService<IIndianMarketDataService>();
 
 
         int count = 0;
@@ -134,9 +135,14 @@ public class DataRefreshService : BackgroundService, IDataRefreshService
                     await repo.AddAsync(stock);
                 }
 
-                // 2. Fetch real-time metadata from Yahoo Finance:
-                //    sector, industry, market cap, 52w high/low, day change%, shares outstanding
-                var metadata = await metadataService.FetchMetadataAsync(symbol);
+                // 2. Fetch real-time metadata from IndianAPI (fallback to Yahoo)
+                var metadata = await indianApiService.FetchMetadataAsync(symbol);
+                if (metadata == null)
+                {
+                    _logger.LogWarning("IndianAPI metadata failed for {Symbol}, falling back to Yahoo", symbol);
+                    metadata = await metadataService.FetchMetadataAsync(symbol);
+                }
+
                 if (metadata != null)
                 {
                     if (metadata.Sector != null) stock.Sector = metadata.Sector;
@@ -154,8 +160,15 @@ public class DataRefreshService : BackgroundService, IDataRefreshService
                 // 3. Fetch prices (incremental from last stored date)
                 var lastDate = await repo.GetLastPriceDateAsync(stock.Id);
                 var from = lastDate?.AddDays(1) ?? DateTime.UtcNow.AddYears(-8);
-                var prices = await priceService.FetchHistoricalPricesAsync(symbol, from, DateTime.UtcNow);
-                if (prices.Count > 0)
+                
+                var prices = await indianApiService.FetchHistoricalPricesAsync(symbol, from, DateTime.UtcNow);
+                if (prices == null || prices.Count == 0)
+                {
+                    _logger.LogWarning("IndianAPI prices failed for {Symbol}, falling back to Yahoo", symbol);
+                    prices = await priceService.FetchHistoricalPricesAsync(symbol, from, DateTime.UtcNow);
+                }
+
+                if (prices != null && prices.Count > 0)
                 {
                     foreach (var p in prices) p.StockId = stock.Id;
                     await repo.AddPricesAsync(prices);
@@ -177,9 +190,18 @@ public class DataRefreshService : BackgroundService, IDataRefreshService
                     await repo.AddDividendsAsync(divs);
                 }
 
-                // 5. Fetch financial statements and TTM fundamentals from Yahoo Finance
-                var (statements, baseMetric) = await fundDataService.FetchFundamentalsAsync(symbol);
-                if (statements.Count > 0)
+                // 5. Fetch financial statements and TTM fundamentals from IndianAPI (fallback to Yahoo)
+                var (statements, baseMetric) = await indianApiService.FetchFundamentalsAsync(symbol);
+                if ((statements == null || statements.Count == 0) && baseMetric == null)
+                {
+                    _logger.LogWarning("IndianAPI fundamentals failed for {Symbol}, falling back to Yahoo", symbol);
+                    (statements, baseMetric) = await fundDataService.FetchFundamentalsAsync(symbol);
+                }
+
+                // 5b. Fetch Shareholding pattern from IndianAPI
+                var shareholding = await indianApiService.FetchShareholdingAsync(symbol);
+
+                if (statements != null && statements.Count > 0)
                 {
                     foreach (var s in statements) s.StockId = stock.Id;
                     await repo.AddFinancialStatementsAsync(statements);
@@ -189,14 +211,24 @@ public class DataRefreshService : BackgroundService, IDataRefreshService
                     await repo.AddFundamentalMetricAsync(metric);
 
                     // 6a. Intrinsic Valuation
-                    var valuation = intrinsicValueService.CalculateIntrinsicValue(stock.Id, stock.CurrentPrice ?? 0, metric);
-                    var db = scope.ServiceProvider.GetRequiredService<Nifty50.Infrastructure.Data.AppDbContext>();
-                    db.IntrinsicValuations.Add(valuation);
-                    await db.SaveChangesAsync(ct);
+                    if (stock.CurrentPrice != null && stock.CurrentPrice > 0)
+                    {
+                        var valuation = intrinsicValueService.CalculateIntrinsicValue(stock.Id, stock.CurrentPrice.Value, metric);
+                        await repo.AddIntrinsicValuationAsync(valuation);
+                    }
 
                     // 6b. Quality Assessment
-                    var existingQuality = await repo.GetLatestQualityAsync(stock.Id);
-                    var quality = qualityAssessmentService.AssessQuality(stock.Id, statements, metric, existingQuality);
+                    var existingQuality = await repo.GetLatestQualityAsync(stock.Id) ?? new QualityMetric { StockId = stock.Id };
+                    
+                    // Populate real shareholding data if available
+                    if (shareholding != null)
+                    {
+                        existingQuality.PromoterHolding = shareholding.PromoterHolding ?? existingQuality.PromoterHolding;
+                        existingQuality.FIIHolding = shareholding.FIIHolding ?? existingQuality.FIIHolding;
+                        existingQuality.DIIHolding = shareholding.DIIHolding ?? existingQuality.DIIHolding;
+                    }
+
+                    var quality = qualityAssessmentService.AssessQuality(stock.Id, statements, metric, stock.Sector, stock.MarketCap, existingQuality);
                     await repo.UpsertQualityMetricAsync(quality);
                 }
 
@@ -217,12 +249,6 @@ public class DataRefreshService : BackgroundService, IDataRefreshService
 
                 // Small delay between stocks to respect Yahoo Finance rate limits
                 await Task.Delay(1000, ct);
-                
-                // Force garbage collection every 10 stocks to keep memory footprint low on 512MB RAM
-                if (count % 10 == 0)
-                {
-                    GC.Collect();
-                }
             }
             catch (Exception ex)
             {
@@ -243,15 +269,29 @@ public class DataRefreshService : BackgroundService, IDataRefreshService
                 .Where(sh => sh.RecordedAt < ninetyDaysAgo)
                 .ToListAsync(ct);
 
-            // For records between 90 days and 1 year, keep 1 per week (Sunday).
-            // For records > 1 year, keep 1 per month (1st of month).
-            var toDelete = oldRecords.Where(sh => 
+            var toDelete = new List<ScoreHistory>();
+            var groupedByStock = oldRecords.GroupBy(sh => sh.StockId);
+            foreach (var stockGroup in groupedByStock)
             {
-                if (sh.RecordedAt < oneYearAgo)
-                    return sh.RecordedAt.Day != 1;
-                else
-                    return sh.RecordedAt.DayOfWeek != DayOfWeek.Sunday;
-            }).ToList();
+                var between90AndYear = stockGroup.Where(sh => sh.RecordedAt >= oneYearAgo);
+                var olderThanYear = stockGroup.Where(sh => sh.RecordedAt < oneYearAgo);
+                
+                // Keep 1 per week (latest in that week)
+                var weeklyGroups = between90AndYear.GroupBy(sh => sh.RecordedAt.Date.AddDays(-(int)sh.RecordedAt.DayOfWeek));
+                foreach (var week in weeklyGroups)
+                {
+                    var keep = week.OrderByDescending(sh => sh.RecordedAt).First();
+                    toDelete.AddRange(week.Where(sh => sh.Id != keep.Id));
+                }
+                
+                // Keep 1 per month (latest in that month)
+                var monthlyGroups = olderThanYear.GroupBy(sh => new DateTime(sh.RecordedAt.Year, sh.RecordedAt.Month, 1));
+                foreach (var month in monthlyGroups)
+                {
+                    var keep = month.OrderByDescending(sh => sh.RecordedAt).First();
+                    toDelete.AddRange(month.Where(sh => sh.Id != keep.Id));
+                }
+            }
 
             if (toDelete.Any())
             {

@@ -22,7 +22,8 @@ graph TD
     end
 
     subgraph External APIs
-        Data_Services -- "Metadata, Prices & Financials" --> YahooFinance[Yahoo Finance API]
+        Data_Services -- "Metadata, Prices & Financials" --> IndianAPI[IndianAPI.in]
+        Data_Services -- "Metadata & Prices (Fallback)" --> YahooFinance[Yahoo Finance API]
         Data_Services -- "News Sentiment" --> GNews[GNews API]
     end
 
@@ -36,7 +37,7 @@ graph TD
     classDef external fill:#0f172a,stroke:#f59e0b,stroke-width:2px,color:#f8fafc;
     classDef database fill:#0f172a,stroke:#10b981,stroke-width:2px,color:#f8fafc;
     
-    class YahooFinance,GNews external;
+    class IndianAPI,YahooFinance,GNews external;
     class PostgreSQL database;
 ```
 
@@ -45,4 +46,4 @@ graph TD
 1. **Frontend Applications**: Built with React (Web) and React Native (Mobile), providing responsive dashboards. They poll the backend API to retrieve stock prices, historical metrics, and sentiment analysis.
 2. **Backend Controllers**: Exposes a clean RESTful API (`/api/stocks`, `/api/dashboard`, `/api/scoring-profiles`) consumed by the frontends.
 3. **Background Worker**: The `DataRefreshService` is an `IHostedService` that runs continuously in the background (on a configurable interval, e.g. every 24 hours), ensuring the database is always up to date with the latest market data without blocking the main API threads.
-4. **Data Services**: Handlers like `YahooFinanceService`, `YahooMetadataService`, and `GNewsSentimentService` manage HTTP requests, API rate limits, and custom Cookie/Crumb extraction to interface with third-party providers. The metadata service ensures critical fields like Market Cap, Sector, and Shares Outstanding are always populated.
+4. **Data Services**: Handlers like `IndianApiService` and `GNewsSentimentService` manage HTTP requests, API rate limits, and JSON parsing. The primary `IndianApiService` fetches metadata, real-time prices, deep fundamentals, and institutional shareholding patterns. If it fails or quotas are exhausted, the background worker automatically falls back to secondary services like `YahooFinanceService` and `YahooMetadataService`.

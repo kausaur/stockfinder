@@ -13,11 +13,12 @@ builder.Services.AddSwaggerGen(c =>
 
 builder.Services.AddInfrastructure(builder.Configuration);
 
+var allowedOrigins = builder.Configuration.GetSection("AllowedOrigins").Get<string[]>() ?? new[] { "http://localhost:5173", "http://localhost:3000", "http://localhost:19006" };
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowFrontend", policy =>
     {
-        policy.AllowAnyOrigin()
+        policy.WithOrigins(allowedOrigins)
               .AllowAnyMethod()
               .AllowAnyHeader();
     });
@@ -29,6 +30,17 @@ builder.Services.AddHealthChecks();
 
 var app = builder.Build();
 
+app.UseExceptionHandler(errorApp => {
+    errorApp.Run(async context => {
+        var feature = context.Features.Get<Microsoft.AspNetCore.Diagnostics.IExceptionHandlerFeature>();
+        var logger = context.RequestServices.GetRequiredService<Microsoft.Extensions.Logging.ILogger<Program>>();
+        logger.LogError(feature?.Error, "Unhandled exception");
+        context.Response.StatusCode = 500;
+        context.Response.ContentType = "application/json";
+        await context.Response.WriteAsync("{\"error\":\"An unexpected error occurred.\"}");
+    });
+});
+
 // Apply migrations and seed presets
 using (var scope = app.Services.CreateScope())
 {
@@ -38,13 +50,13 @@ using (var scope = app.Services.CreateScope())
     await SeedData.UpdatePresetsForV2Async(db);
 }
 
-app.UseSwagger();
-app.UseSwaggerUI();
+if (app.Environment.IsDevelopment())
+{
+    app.UseSwagger();
+    app.UseSwaggerUI();
+}
 app.UseCors("AllowFrontend");
 app.UseResponseCaching();
 app.MapHealthChecks("/healthz");
 app.MapControllers();
 app.Run();
-
-// Make Program visible for integration tests
-public partial class Program { }

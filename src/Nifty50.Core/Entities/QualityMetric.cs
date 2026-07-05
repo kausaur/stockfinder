@@ -24,7 +24,7 @@ public class QualityMetric : BaseEntity
     // Consistency
     public int? ConsecutiveProfitYears { get; set; }
     public int? ConsecutiveDividendYears { get; set; }
-    public decimal? ROCELatest { get; set; }
+    public decimal? ROICLatest { get; set; }
     
     // FCF quality
     public string? FCFTrend { get; set; }

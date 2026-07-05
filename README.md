@@ -1,6 +1,6 @@
 # StockFinder — Nifty50 Stock Analyzer
 
-A full-stack, real-time stock analysis platform for India's Nifty 50 blue-chip index. StockFinder automatically harvests live market data from Yahoo Finance and GNews, runs it through a configurable scoring engine, and delivers actionable **Buy / Hold / Sell** signals across a web dashboard, a cross-platform mobile app, and push notifications — all powered by **zero hardcoded or mock data**.
+A full-stack, real-time stock analysis platform for India's Nifty 50 blue-chip index. StockFinder automatically harvests live market data from IndianAPI.in and GNews (with Yahoo Finance as fallback), runs it through a configurable scoring engine, and delivers actionable **Buy / Hold / Sell** signals across a web dashboard, a cross-platform mobile app, and push notifications — all powered by **zero hardcoded or mock data**.
 
 ---
 
@@ -8,8 +8,8 @@ A full-stack, real-time stock analysis platform for India's Nifty 50 blue-chip i
 
 | | |
 |-|-|
-| 📊 **Live Market Data** | Prices, financials, dividends, metadata — all sourced in real time from Yahoo Finance |
-| 🧠 **Scoring Engine** | Technical (MACD, RSI, Bollinger, ADX) + Fundamental (P/E, ROE, D/E, EPS growth) + Sentiment + Dividends |
+| 📊 **Live Market Data** | Prices, financials, dividends, metadata, and institutional shareholding — sourced from IndianAPI.in |
+| 🧠 **Scoring Engine** | 6 Dimensions: Technical + Fundamental + Valuation (Intrinsic) + Quality (Piotroski/Altman/Shareholding) + Sentiment + Dividends |
 | 🎛️ **Customizable Strategy** | Six preset profiles (Balanced, Growth, Value, Income, Momentum, Quality) or build your own weightings |
 | 📱 **Cross-Platform Mobile** | React Native / Expo app for iOS and Android with offline caching |
 | 🔔 **Push Notifications** | Instant Expo push alerts when a stock triggers a Buy or Strong Buy signal |
@@ -48,7 +48,8 @@ Click any stock to open the full analysis view:
 | **Price Chart** | Interactive candlestick chart with volume overlay and a range selector (1 W → 8 Y) |
 | **Overall Score** | A gauge showing the composite 0–100 score and the resulting signal (Strong Buy → Strong Sell) |
 | **Technical Indicators** | RSI-14, MACD histogram, SMA 50/200 crossover, Bollinger Band position, ADX trend strength |
-| **Fundamental Ratios** | P/E, P/B, ROE, ROA, Debt-to-Equity, EPS, Revenue & Earnings Growth YoY — computed from real financials with real shares outstanding |
+| **Fundamental Ratios** | P/E, P/B, ROE, ROA, Debt-to-Equity, EPS, Revenue & Earnings Growth YoY |
+| **Valuation & Quality** | Fair Value / Graham Number comparisons, Piotroski F-Score, Altman Z-Score, and institutional shareholding patterns (Promoter/FII/DII) |
 | **Sentiment** | Latest news headlines via GNews, a bullish/bearish score, and article count breakdown |
 | **Dividends** | Yield, payout ratio, and full dividend history |
 | **Analysis Verdict** | A human-readable reasoning paragraph explaining why each sub-score was assigned |
@@ -98,10 +99,10 @@ The React Native (Expo) app mirrors the web experience with native performance a
 └──────────────┘    │                  │    └──────────────┘
                     │  Background Jobs │
 ┌──────────────┐    │  ┌────────────┐  │    ┌──────────────┐
-│  Expo Mobile │◄──►│  │DataRefresh │──┼──► │ Yahoo Finance│
-│  (RN)        │    │  │Service     │  │    │ GNews API    │
-└──────────────┘    │  └────────────┘  │    └──────────────┘
-                    │         │        │
+│  Expo Mobile │◄──►│  │DataRefresh │──┼──► │ IndianAPI.in │
+│  (RN)        │    │  │Service     │  │    │ Yahoo Finance│
+└──────────────┘    │  └────────────┘  │    │ GNews API    │
+                    │         │        │    └──────────────┘
        Push ◄───────│  PushNotification│
                     │  Service         │
                     └──────────────────┘
@@ -114,7 +115,7 @@ The React Native (Expo) app mirrors the web experience with native performance a
 | Backend API | .NET 8, Entity Framework Core, PostgreSQL |
 | Web Frontend | React 18, Vite, Recharts, Vanilla CSS |
 | Mobile App | React Native, Expo SDK 54, Expo Router |
-| Data Sources | Yahoo Finance (prices, fundamentals, metadata), GNews (sentiment) |
+| Data Sources | IndianAPI.in (prices, fundamentals, shareholding), Yahoo Finance (fallback), GNews (sentiment) |
 | Hosting | Render (Web Service + Static Site), Neon (managed PostgreSQL) |
 
 ---

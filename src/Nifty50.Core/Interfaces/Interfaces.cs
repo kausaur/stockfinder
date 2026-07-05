@@ -39,7 +39,7 @@ public interface IStockRepository
     Task<QualityMetric?> GetLatestQualityAsync(Guid stockId);
     Task UpsertQualityMetricAsync(QualityMetric metric);
     Task<List<ScoreHistory>> GetScoreHistoryAsync(Guid stockId, int limit = 100);
-    Task<List<IndexMembership>> GetIndexMembershipsAsync(string indexName);
+    Task AddIntrinsicValuationAsync(IntrinsicValuation valuation);
 }
 
 public interface IStockDataService
@@ -118,7 +118,7 @@ public interface IIntrinsicValueService
 
 public interface IQualityAssessmentService
 {
-    QualityMetric AssessQuality(Guid stockId, List<FinancialStatement> statements, FundamentalMetric metric, QualityMetric? existingCuratedData);
+    QualityMetric AssessQuality(Guid stockId, List<FinancialStatement> statements, FundamentalMetric metric, string? sector, decimal? marketCap, QualityMetric? existingCuratedData);
 }
 
 public interface IRecommendationService
@@ -126,4 +126,12 @@ public interface IRecommendationService
     Task<RecommendationDashboardDto> GetDashboardAsync();
     Task<List<StockRecommendationDto>> ScreenStocksAsync(ScreenerFilters filters);
     Task<List<PeerComparisonDto>> GetPeersAsync(Guid stockId);
+}
+
+public interface IIndianMarketDataService
+{
+    Task<StockMetadataDto?> FetchMetadataAsync(string symbol);
+    Task<(List<FinancialStatement> Statements, FundamentalMetric? Metric)> FetchFundamentalsAsync(string symbol);
+    Task<ShareholdingDto?> FetchShareholdingAsync(string symbol);
+    Task<List<StockPrice>> FetchHistoricalPricesAsync(string symbol, DateTime from, DateTime to);
 }
