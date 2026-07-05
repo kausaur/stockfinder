@@ -54,13 +54,13 @@ public class RecommendationService : IRecommendationService
         }).ToList();
 
         var topBullish = recommendations
-            .Where(r => r.OverallSignal == "StrongBuy" || r.OverallSignal == "Buy")
+            .Where(r => r.OverallSignal == "Strong Bullish" || r.OverallSignal == "Bullish")
             .OrderByDescending(r => r.OverallScore)
             .Take(10)
             .ToList();
 
         var bottomBearish = recommendations
-            .Where(r => r.OverallSignal == "StrongSell" || r.OverallSignal == "Sell")
+            .Where(r => r.OverallSignal == "Strong Bearish" || r.OverallSignal == "Bearish")
             .OrderBy(r => r.OverallScore)
             .Take(5)
             .ToList();
@@ -81,8 +81,8 @@ public class RecommendationService : IRecommendationService
             .OrderByDescending(s => s.AverageChangePercent)
             .ToList();
 
-        var bullishCount = recommendations.Count(r => r.OverallSignal == "StrongBuy" || r.OverallSignal == "Buy");
-        var bearishCount = recommendations.Count(r => r.OverallSignal == "StrongSell" || r.OverallSignal == "Sell");
+        var bullishCount = recommendations.Count(r => r.OverallSignal == "Strong Bullish" || r.OverallSignal == "Bullish");
+        var bearishCount = recommendations.Count(r => r.OverallSignal == "Strong Bearish" || r.OverallSignal == "Bearish");
 
         return new RecommendationDashboardDto(
             topBullish,
