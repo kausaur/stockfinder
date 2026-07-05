@@ -32,6 +32,10 @@ public class FundamentalAnalysisService : IFundamentalAnalysisService
             if (currentPrice.HasValue && eps.HasValue && eps > 0)
                 metric.PERatio ??= currentPrice / eps;
 
+            // PEG Ratio: P/E / Earnings Growth
+            if (metric.PERatio.HasValue && metric.EarningsGrowthYoY.HasValue && metric.EarningsGrowthYoY > 0)
+                metric.PEGRatio ??= metric.PERatio.Value / metric.EarningsGrowthYoY.Value;
+
             if (latestIncome.TotalRevenue.HasValue && latestIncome.TotalRevenue > 0)
             {
                 if (latestIncome.GrossProfit.HasValue)
@@ -74,8 +78,8 @@ public class FundamentalAnalysisService : IFundamentalAnalysisService
                 if (latestBS.TotalDebt.HasValue)
                     metric.DebtToEquity ??= latestBS.TotalDebt / latestBS.TotalEquity;
             }
-            if (latestBS.TotalAssets.HasValue && latestBS.TotalAssets > 0 && latestBS.TotalLiabilities.HasValue)
-                metric.DebtToAssets ??= latestBS.TotalLiabilities / latestBS.TotalAssets;
+            if (latestBS.TotalAssets.HasValue && latestBS.TotalAssets > 0 && latestBS.TotalDebt.HasValue)
+                metric.DebtToAssets ??= latestBS.TotalDebt / latestBS.TotalAssets;
 
             if (latestIncome?.InterestExpense.HasValue == true && latestIncome.InterestExpense < 0
                 && latestIncome?.OperatingIncome.HasValue == true)

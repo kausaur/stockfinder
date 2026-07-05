@@ -150,18 +150,36 @@ public class StockAnalysisEngine : IStockAnalysisEngine
             totalWeightUsed += p.TechRSIWeight;
         }
 
-        // MACD: histogram direction + signal crossover + histogram magnitude
+        // MACD: score based on histogram magnitude and direction
         if (t.MACDHistogram.HasValue)
         {
-            double macdScore = t.MACDHistogram > 0 ? 70 : 30;
-            if (t.MACD.HasValue && t.MACDSignal.HasValue)
+            var hist = (double)t.MACDHistogram.Value;
+            double macdScore;
+
+            if (hist > 0)
             {
-                if (t.MACD > t.MACDSignal) macdScore += 15; // Bullish crossover
-                else macdScore -= 15; // Bearish crossover
+                // Bullish: base 60, stronger histogram → higher score
+                macdScore = 60;
+                // Normalize histogram strength relative to current price
+                if (currentPrice.HasValue && currentPrice > 0)
+                {
+                    var normalizedHist = Math.Abs(hist) / (double)currentPrice.Value;
+                    if (normalizedHist > 0.005) macdScore = 85;      // Strong bullish
+                    else if (normalizedHist > 0.002) macdScore = 75;  // Moderate bullish
+                }
             }
-            // Histogram strength bonus: bigger histogram = stronger conviction
-            var histAbs = Math.Abs((double)t.MACDHistogram.Value);
-            if (histAbs > 5) macdScore += (t.MACDHistogram > 0 ? 5 : -5);
+            else
+            {
+                // Bearish: base 40, stronger histogram → lower score
+                macdScore = 40;
+                if (currentPrice.HasValue && currentPrice > 0)
+                {
+                    var normalizedHist = Math.Abs(hist) / (double)currentPrice.Value;
+                    if (normalizedHist > 0.005) macdScore = 15;      // Strong bearish
+                    else if (normalizedHist > 0.002) macdScore = 25;  // Moderate bearish
+                }
+            }
+
             score += p.TechMACDWeight / 100.0 * Math.Clamp(macdScore, 0, 100);
             totalWeightUsed += p.TechMACDWeight;
         }
@@ -207,21 +225,57 @@ public class StockAnalysisEngine : IStockAnalysisEngine
             totalWeightUsed += p.TechBollingerWeight;
         }
 
-        // ADX: trend strength (>25 = strong trend, good for momentum strategies)
+        // ADX: trend strength + direction (uses +DI/-DI to determine bullish vs bearish)
         if (t.ADX14.HasValue)
         {
             var adx = (double)t.ADX14.Value;
-            double adxScore = adx > 50 ? 90 : adx > 40 ? 80 : adx > 25 ? 65 : adx > 15 ? 40 : 25;
+            double adxScore;
+
+            if (adx < 20)
+            {
+                // Weak/no trend — neutral
+                adxScore = 50;
+            }
+            else if (t.PlusDI.HasValue && t.MinusDI.HasValue)
+            {
+                // Strong trend — use +DI vs -DI for direction
+                if (t.PlusDI > t.MinusDI)
+                {
+                    // Bullish trend: the stronger the trend, the higher the score
+                    adxScore = 55 + Math.Min(35, (adx - 20) / 80.0 * 35); // 55 → 90
+                }
+                else
+                {
+                    // Bearish trend: the stronger the trend, the lower the score
+                    adxScore = 45 - Math.Min(35, (adx - 20) / 80.0 * 35); // 45 → 10
+                }
+            }
+            else
+            {
+                // No directional data available — neutral
+                adxScore = 50;
+            }
+
             score += p.TechADXWeight / 100.0 * adxScore;
             totalWeightUsed += p.TechADXWeight;
         }
 
-        // Volume (OBV): positive OBV = accumulation, negative = distribution
-        if (t.OBV.HasValue)
+        // Volume (OBV): rising OBV = accumulation (bullish), falling OBV = distribution (bearish)
+        if (t.OBV.HasValue && t.OBVSMA20.HasValue)
         {
-            double obvScore = t.OBV > 0 ? 70 : 35;
+            double obvScore;
+            if (t.OBV > t.OBVSMA20)
+                obvScore = 75; // OBV above its SMA = accumulation / bullish
+            else
+                obvScore = 25; // OBV below its SMA = distribution / bearish
+
             score += p.TechVolumeWeight / 100.0 * obvScore;
             totalWeightUsed += p.TechVolumeWeight;
+        }
+        else if (t.OBV.HasValue)
+        {
+            // No SMA available — skip volume scoring rather than guessing
+            // Do NOT add to totalWeightUsed so it gets normalized out
         }
 
         // Normalize if not all sub-indicators had data
@@ -328,26 +382,19 @@ public class StockAnalysisEngine : IStockAnalysisEngine
 
     private static int CalculateValuationScore(IntrinsicValuation? v, FundamentalMetric? f, ScoringProfile p)
     {
-        double score = 50; // default middle
-        if (v?.UpsidePercent != null)
-        {
-            var up = v.UpsidePercent.Value;
-            if (up > 25) score = 95;
-            else if (up > 10) score = 80;
-            else if (up > 0) score = 65;
-            else if (up > -10) score = 45;
-            else if (up > -25) score = 25;
-            else score = 10;
-        }
-        else if (f?.PERatio != null) // Graceful degradation if no intrinsic valuation
-        {
-            var pe = f.PERatio.Value;
-            if (pe < 12) score = 90;
-            else if (pe < 20) score = 75;
-            else if (pe < 30) score = 50;
-            else if (pe < 45) score = 30;
-            else score = 15;
-        }
+        // Only score based on intrinsic valuation (Fair Value / Graham Number).
+        // P/E is already scored in CalculateFundamentalScore; do NOT duplicate here.
+        if (v?.UpsidePercent == null) return 50; // No valuation data — neutral default
+
+        double score;
+        var up = v.UpsidePercent.Value;
+        if (up > 25) score = 95;
+        else if (up > 10) score = 80;
+        else if (up > 0) score = 65;
+        else if (up > -10) score = 45;
+        else if (up > -25) score = 25;
+        else score = 10;
+
         return Math.Clamp((int)score, 0, 100);
     }
 
@@ -426,31 +473,29 @@ public class StockAnalysisEngine : IStockAnalysisEngine
         return Math.Clamp((int)score, 0, 100);
     }
 
-    /// <summary>Converts raw sentiment data into a 0-100 score with more variance</summary>
+    /// <summary>Converts raw sentiment data into a 0-100 score using a sigmoid curve</summary>
     private static int CalculateSentimentScore(Nifty50.Core.Entities.SentimentAnalysis? sent)
     {
-        if (sent == null) return 50;
+        if (sent == null) return 45; // No data = slightly below neutral (conservative)
 
-        // Use the raw score (-1 to +1) but apply a wider mapping
+        // Use the raw score (-1 to +1) with a sigmoid (tanh) curve for smooth graduation
         var raw = (double)sent.SentimentScore; // -1 to +1
-        // Apply sigmoid-like curve to amplify differences around neutral
-        double amplified = raw * 2.5; // Amplify small differences
-        amplified = Math.Clamp(amplified, -1, 1);
-        double baseScore = (amplified + 1.0) / 2.0 * 100.0; // Map to 0-100
+        double curved = Math.Tanh(raw * 1.8); // Smooth S-curve, avoids hard clamping
+        double baseScore = (curved + 1.0) / 2.0 * 100.0; // Map to 0-100
 
-        // Bonus/penalty from article count balance
+        // Confidence adjustment: fewer articles = regress toward neutral (50)
         int totalArticles = sent.PositiveCount + sent.NegativeCount + sent.NeutralCount;
-        if (totalArticles > 0)
+        if (totalArticles <= 1)
         {
-            double posRatio = (double)sent.PositiveCount / totalArticles;
-            double negRatio = (double)sent.NegativeCount / totalArticles;
-            // Shift score based on article sentiment ratio
-            baseScore += (posRatio - negRatio) * 20; // Up to ±20 point swing
+            // Very low confidence — pull heavily toward 50
+            baseScore = baseScore * 0.4 + 50 * 0.6;
         }
-
-        // Volume bonus: more articles = more confidence in the score
-        if (totalArticles >= 5) baseScore += 3;
-        else if (totalArticles <= 1) baseScore -= 3; // Low confidence penalty
+        else if (totalArticles <= 3)
+        {
+            // Low confidence — pull somewhat toward 50
+            baseScore = baseScore * 0.7 + 50 * 0.3;
+        }
+        // No pos/neg ratio bonus — this was double-counting (S4 fix)
 
         return Math.Clamp((int)baseScore, 0, 100);
     }

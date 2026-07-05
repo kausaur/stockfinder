@@ -28,6 +28,8 @@ public class TechnicalIndicator : BaseEntity
     // Volatility & Trend
     public decimal? ATR14 { get; set; }
     public decimal? ADX14 { get; set; }
+    public decimal? PlusDI { get; set; }
+    public decimal? MinusDI { get; set; }
 
     // Stochastic
     public decimal? StochK { get; set; }
@@ -35,6 +37,7 @@ public class TechnicalIndicator : BaseEntity
 
     // Volume
     public decimal? OBV { get; set; }
+    public decimal? OBVSMA20 { get; set; }
     public decimal? VWAP { get; set; }
     public decimal? MFI14 { get; set; }
 

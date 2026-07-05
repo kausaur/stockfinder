@@ -13,19 +13,7 @@ public class YahooSentimentService : ISentimentService
     private readonly ILogger<YahooSentimentService> _logger;
     private readonly IApiMonitorService _monitor;
 
-    private static readonly HashSet<string> PositiveKeywords = new(StringComparer.OrdinalIgnoreCase)
-    {
-        "profit", "growth", "upgrade", "beat", "record", "surge", "strong", "rally", "bullish",
-        "outperform", "revenue", "earnings", "dividend", "buy", "gain", "rise", "positive",
-        "expansion", "innovation", "breakthrough", "recovery", "optimistic", "boost"
-    };
-
-    private static readonly HashSet<string> NegativeKeywords = new(StringComparer.OrdinalIgnoreCase)
-    {
-        "loss", "downgrade", "miss", "decline", "weak", "default", "fraud", "crash", "bearish",
-        "underperform", "debt", "lawsuit", "sell", "fall", "drop", "negative", "recession",
-        "warning", "risk", "concern", "investigation", "penalty", "slump"
-    };
+    // Keyword lists moved to SentimentScoringHelper.cs
 
     public YahooSentimentService(HttpClient http, ILogger<YahooSentimentService> logger, IApiMonitorService monitor)
     {
@@ -43,16 +31,16 @@ public class YahooSentimentService : ISentimentService
 
         foreach (var headline in headlines)
         {
-            var score = ScoreHeadline(headline);
+            var score = SentimentScoringHelper.ScoreHeadline(headline);
             totalScore += score;
-            if (score > 0.1m) pos++;
-            else if (score < -0.1m) neg++;
+            if (score > 0.05m) pos++;
+            else if (score < -0.05m) neg++;
             else neut++;
         }
 
         var avgScore = headlines.Count > 0 ? totalScore / headlines.Count : 0;
-        var sentiment = avgScore > 0.1m ? SentimentType.Bullish
-                      : avgScore < -0.1m ? SentimentType.Bearish
+        var sentiment = avgScore > 0.08m ? SentimentType.Bullish
+                      : avgScore < -0.08m ? SentimentType.Bearish
                       : SentimentType.Neutral;
 
         return new SentimentAnalysis
@@ -97,18 +85,5 @@ public class YahooSentimentService : ISentimentService
         }
     }
 
-    private static decimal ScoreHeadline(string headline)
-    {
-        var words = headline.Split(new[] { ' ', ',', '.', '!', '?', ':', ';', '-', '(', ')', '"', '\'' },
-            StringSplitOptions.RemoveEmptyEntries);
-        int posCount = 0, negCount = 0;
-        foreach (var word in words)
-        {
-            if (PositiveKeywords.Contains(word)) posCount++;
-            if (NegativeKeywords.Contains(word)) negCount++;
-        }
-        int total = posCount + negCount;
-        if (total == 0) return 0m;
-        return (decimal)(posCount - negCount) / total;
-    }
+    // ScoreHeadline method moved to SentimentScoringHelper.cs
 }

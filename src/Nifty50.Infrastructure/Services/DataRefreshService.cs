@@ -237,15 +237,25 @@ public class DataRefreshService : BackgroundService, IDataRefreshService
                 if (allPrices.Count >= 30)
                 {
                     var indicators = techService.CalculateIndicators(stock.Id, allPrices);
-                    // Save last 30 days of indicators to keep DB size manageable
-                    var recentIndicators = indicators.TakeLast(30).ToList();
+                    // Save last 5 days of indicators to keep DB size manageable
+                    var recentIndicators = indicators.TakeLast(5).ToList();
                     await repo.AddTechnicalIndicatorsAsync(recentIndicators);
                 }
 
-                // 8. Analyze sentiment via Yahoo Finance
-                var sentiment = await sentimentService.AnalyzeSentimentAsync(name, symbol);
-                sentiment.StockId = stock.Id;
-                await repo.AddSentimentAsync(sentiment);
+                // 8. Analyze sentiment (skip if recent data exists to preserve API quota)
+                var existingSentiment = await repo.GetLatestSentimentAsync(stock.Id);
+                var sentimentStaleHours = _config.GetValue<double>("DataRefresh:SentimentStaleHours", 12.0);
+                if (existingSentiment == null || DateTime.UtcNow - existingSentiment.AnalyzedAt > TimeSpan.FromHours(sentimentStaleHours))
+                {
+                    var sentiment = await sentimentService.AnalyzeSentimentAsync(name, symbol);
+                    sentiment.StockId = stock.Id;
+                    await repo.AddSentimentAsync(sentiment);
+                }
+                else
+                {
+                    _logger.LogDebug("Skipping sentiment for {Symbol} — last analyzed {Ago:F1}h ago",
+                        symbol, (DateTime.UtcNow - existingSentiment.AnalyzedAt).TotalHours);
+                }
 
                 // Small delay between stocks to respect Yahoo Finance rate limits
                 await Task.Delay(1000, ct);

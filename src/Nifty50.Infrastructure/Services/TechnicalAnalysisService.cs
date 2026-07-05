@@ -32,6 +32,23 @@ public class TechnicalAnalysisService : ITechnicalAnalysisService
         var adx = quotes.GetAdx(14).ToList();
         var stoch = quotes.GetStoch(14, 3, 3).ToList();
         var obv = quotes.GetObv().ToList();
+
+        // Compute a 20-period SMA of OBV to determine the OBV trend direction
+        var obvValues = obv.Select(o => new Quote
+        {
+            Date = o.Date,
+            Close = (decimal)o.Obv
+        }).ToList();
+        // Use a simple average of the last 20 OBV values
+        var obvSma = new List<double?>();
+        for (int j = 0; j < obv.Count; j++)
+        {
+            if (j < 19) { obvSma.Add(null); continue; }
+            double sum = 0;
+            for (int k = j - 19; k <= j; k++) sum += obv[k].Obv;
+            obvSma.Add(sum / 20.0);
+        }
+
         var mfi = quotes.GetMfi(14).ToList();
         var cci = quotes.GetCci(20).ToList();
         var willR = quotes.GetWilliamsR(14).ToList();
@@ -61,9 +78,12 @@ public class TechnicalAnalysisService : ITechnicalAnalysisService
                 BollingerLower = (decimal?)bb[i].LowerBand,
                 ATR14 = (decimal?)atr[i].Atr,
                 ADX14 = (decimal?)adx[i].Adx,
+                PlusDI = (decimal?)adx[i].Pdi,
+                MinusDI = (decimal?)adx[i].Mdi,
                 StochK = (decimal?)stoch[i].K,
                 StochD = (decimal?)stoch[i].D,
-                OBV = (decimal?)obv[i].Obv,
+                OBV = (decimal)obv[i].Obv,
+                OBVSMA20 = i < obvSma.Count && obvSma[i].HasValue ? (decimal?)obvSma[i] : null,
                 MFI14 = (decimal?)mfi[i].Mfi,
                 CCI20 = (decimal?)cci[i].Cci,
                 WilliamsR14 = (decimal?)willR[i].WilliamsR,

@@ -19,23 +19,7 @@ public class GNewsSentimentService : ISentimentService
     private readonly IApiMonitorService _monitor;
     private readonly string? _apiKey;
 
-    private static readonly HashSet<string> PositiveKeywords = new(StringComparer.OrdinalIgnoreCase)
-    {
-        "profit", "growth", "upgrade", "beat", "record", "surge", "strong", "rally", "bullish",
-        "outperform", "revenue", "earnings", "dividend", "buy", "gain", "rise", "positive",
-        "expansion", "innovation", "breakthrough", "recovery", "optimistic", "boost", "soar",
-        "high", "up", "jump", "momentum", "leader", "winner", "opportunity", "upbeat",
-        "robust", "accelerate", "exceed", "top", "best", "impressive", "stellar"
-    };
-
-    private static readonly HashSet<string> NegativeKeywords = new(StringComparer.OrdinalIgnoreCase)
-    {
-        "loss", "downgrade", "miss", "decline", "weak", "default", "fraud", "crash", "bearish",
-        "underperform", "debt", "lawsuit", "sell", "fall", "drop", "negative", "recession",
-        "warning", "risk", "concern", "investigation", "penalty", "slump", "plunge",
-        "low", "down", "cut", "layoff", "closure", "trouble", "crisis", "volatile",
-        "disappointing", "worst", "struggle", "fail", "collapse", "delay", "probe"
-    };
+    // Keyword lists and ScoreHeadline moved to SentimentScoringHelper.cs
 
     public GNewsSentimentService(HttpClient http, ILogger<GNewsSentimentService> logger,
         IApiMonitorService monitor, IConfiguration config)
@@ -56,7 +40,8 @@ public class GNewsSentimentService : ISentimentService
 
         if (!string.IsNullOrEmpty(_apiKey) && _apiKey != "YOUR_GNEWS_API_KEY")
         {
-            headlines = await FetchGNewsHeadlinesAsync(companyName);
+            // Fetch from GNews (primary)
+            headlines = await FetchGNewsHeadlinesAsync(companyName, symbol);
             source = "GNews";
         }
 
@@ -74,7 +59,7 @@ public class GNewsSentimentService : ISentimentService
 
         foreach (var headline in headlines)
         {
-            var score = ScoreHeadline(headline);
+            var score = SentimentScoringHelper.ScoreHeadline(headline);
             totalScore += score;
             if (score > 0.05m) pos++;
             else if (score < -0.05m) neg++;
@@ -99,9 +84,12 @@ public class GNewsSentimentService : ISentimentService
     }
 
     /// <summary>Fetches headlines from GNews API — returns stock-specific, high-quality results</summary>
-    private async Task<List<string>> FetchGNewsHeadlinesAsync(string companyName)
+    private async Task<List<string>> FetchGNewsHeadlinesAsync(string companyName, string symbol)
     {
-        var query = Uri.EscapeDataString($"{companyName} stock");
+        if (string.IsNullOrEmpty(_apiKey)) return new List<string>();
+
+        var cleanSymbol = symbol.Replace(".NS", "").Replace(".BO", "");
+        var query = Uri.EscapeDataString($"{companyName} {cleanSymbol} stock India NSE");
         var url = $"https://gnews.io/api/v4/search?q={query}&lang=en&max=10&apikey={_apiKey}";
         var sw = System.Diagnostics.Stopwatch.StartNew();
         try
@@ -161,31 +149,5 @@ public class GNewsSentimentService : ISentimentService
         }
     }
 
-    /// <summary>Scores a headline based on keyword matching with bigram awareness</summary>
-    private static decimal ScoreHeadline(string headline)
-    {
-        var lower = headline.ToLowerInvariant();
-        var words = headline.Split(new[] { ' ', ',', '.', '!', '?', ':', ';', '-', '(', ')', '"', '\'' },
-            StringSplitOptions.RemoveEmptyEntries);
-
-        int posCount = 0, negCount = 0;
-
-        foreach (var word in words)
-        {
-            if (PositiveKeywords.Contains(word)) posCount++;
-            if (NegativeKeywords.Contains(word)) negCount++;
-        }
-
-        // Bigram / phrase patterns for stronger signals
-        if (lower.Contains("all-time high") || lower.Contains("52-week high")) posCount += 2;
-        if (lower.Contains("52-week low") || lower.Contains("all-time low")) negCount += 2;
-        if (lower.Contains("target raised") || lower.Contains("price target")) posCount++;
-        if (lower.Contains("target cut") || lower.Contains("rating cut")) negCount++;
-        if (lower.Contains("strong buy") || lower.Contains("top pick")) posCount += 2;
-        if (lower.Contains("strong sell") || lower.Contains("avoid")) negCount += 2;
-
-        int total = posCount + negCount;
-        if (total == 0) return 0m;
-        return (decimal)(posCount - negCount) / total;
-    }
+    // ScoreHeadline method moved to SentimentScoringHelper.cs
 }
