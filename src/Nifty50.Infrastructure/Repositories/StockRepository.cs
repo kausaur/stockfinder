@@ -248,9 +248,9 @@ public class StockRepository : IStockRepository
     public async Task AddAnalysisAsync(StockAnalysis analysis) { _db.StockAnalyses.Add(analysis); await _db.SaveChangesAsync(); }
     public async Task AddIntrinsicValuationAsync(IntrinsicValuation valuation) { _db.IntrinsicValuations.Add(valuation); await _db.SaveChangesAsync(); }
 
-    public async Task ClearAnalysesAsync() 
+    public async Task ClearAnalysesAsync(DateTime before) 
     {
-        await _db.StockAnalyses.ExecuteDeleteAsync();
+        await _db.StockAnalyses.Where(a => a.AnalyzedAt < before).ExecuteDeleteAsync();
     }
 
     public async Task<DashboardDto> GetDashboardDataAsync()

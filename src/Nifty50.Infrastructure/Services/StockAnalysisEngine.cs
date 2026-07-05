@@ -106,7 +106,7 @@ public class StockAnalysisEngine : IStockAnalysisEngine
     public async Task<List<StockAnalysis>> RecalculateAllAsync()
     {
         var alerts = new List<StockAnalysis>();
-        await _repo.ClearAnalysesAsync();
+        var startTime = DateTime.UtcNow;
         var stocks = await _repo.GetAllAsync();
         foreach (var stock in stocks)
         {
@@ -123,6 +123,7 @@ public class StockAnalysisEngine : IStockAnalysisEngine
                 _logger.LogError(ex, "Failed to analyze stock {StockId}", stock.Id);
             }
         }
+        await _repo.ClearAnalysesAsync(startTime);
         return alerts;
     }
 

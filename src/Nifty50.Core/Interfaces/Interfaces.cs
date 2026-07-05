@@ -30,7 +30,7 @@ public interface IStockRepository
     Task<StockAnalysis?> GetLatestAnalysisAsync(Guid stockId);
     Task<List<StockAnalysis>> GetAlertsAsync();
     Task AddAnalysisAsync(StockAnalysis analysis);
-    Task ClearAnalysesAsync();
+    Task ClearAnalysesAsync(DateTime before);
     Task<DashboardDto> GetDashboardDataAsync();
     Task SaveChangesAsync();
     Task<SectorBenchmark?> GetSectorBenchmarkAsync(string sector);
