@@ -285,6 +285,23 @@ public class StockRepository : IStockRepository
     public async Task<IntrinsicValuation?> GetLatestValuationAsync(Guid stockId) =>
         await _db.IntrinsicValuations.Where(v => v.StockId == stockId).OrderByDescending(v => v.ComputedAt).AsNoTracking().FirstOrDefaultAsync();
 
+    public async Task<List<StockDataDto>> GetStocksWithDataAsync(string? sector = null)
+    {
+        var query = _db.Stocks.Where(s => s.IsActive);
+        if (sector != null) query = query.Where(s => s.Sector == sector);
+        
+        return await query
+            .Select(s => new StockDataDto(
+                s,
+                s.StockAnalyses.OrderByDescending(a => a.AnalyzedAt).FirstOrDefault(),
+                s.IntrinsicValuations.OrderByDescending(v => v.ComputedAt).FirstOrDefault(),
+                s.QualityMetrics.OrderByDescending(q => q.AsOfDate).FirstOrDefault(),
+                s.FundamentalMetrics.OrderByDescending(f => f.PeriodEndDate).FirstOrDefault(),
+                s.TechnicalIndicators.OrderByDescending(t => t.Date).FirstOrDefault()
+            ))
+            .ToListAsync();
+    }
+
     public async Task<QualityMetric?> GetLatestQualityAsync(Guid stockId) =>
         await _db.QualityMetrics.Where(q => q.StockId == stockId).OrderByDescending(q => q.AsOfDate).AsNoTracking().FirstOrDefaultAsync();
 

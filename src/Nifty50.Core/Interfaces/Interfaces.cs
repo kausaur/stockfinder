@@ -40,6 +40,7 @@ public interface IStockRepository
     Task UpsertQualityMetricAsync(QualityMetric metric);
     Task<List<ScoreHistory>> GetScoreHistoryAsync(Guid stockId, int limit = 100);
     Task AddIntrinsicValuationAsync(IntrinsicValuation valuation);
+    Task<List<StockDataDto>> GetStocksWithDataAsync(string? sector = null);
 }
 
 public interface IStockDataService

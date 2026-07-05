@@ -4,6 +4,13 @@ public record StockDto(Guid Id, string Symbol, string CompanyName, string? Secto
     decimal? MarketCap, decimal? CurrentPrice, decimal? DayChange, decimal? DayChangePercent,
     decimal? Week52High, decimal? Week52Low, bool IsActive);
 
+public record StockDataDto(Nifty50.Core.Entities.Stock Stock, 
+    Nifty50.Core.Entities.StockAnalysis? Analysis, 
+    Nifty50.Core.Entities.IntrinsicValuation? Valuation, 
+    Nifty50.Core.Entities.QualityMetric? Quality, 
+    Nifty50.Core.Entities.FundamentalMetric? Fundamental, 
+    Nifty50.Core.Entities.TechnicalIndicator? Technical);
+
 public record StockListDto(Guid Id, string Symbol, string CompanyName, string? Sector,
     decimal? CurrentPrice, decimal? DayChangePercent, decimal? MarketCap, string? OverallSignal, int? OverallScore,
     int? ValuationScore = null, int? QualityScore = null);

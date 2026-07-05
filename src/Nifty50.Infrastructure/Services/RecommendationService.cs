@@ -2,56 +2,30 @@ using Microsoft.EntityFrameworkCore;
 using Nifty50.Core.DTOs;
 using Nifty50.Core.Entities;
 using Nifty50.Core.Interfaces;
-using Nifty50.Infrastructure.Data;
 
 namespace Nifty50.Infrastructure.Services;
 
 public class RecommendationService : IRecommendationService
 {
-    private readonly AppDbContext _db;
+    private readonly IStockRepository _repo;
 
-    public RecommendationService(AppDbContext db)
+    public RecommendationService(IStockRepository repo)
     {
-        _db = db;
+        _repo = repo;
     }
 
     public async Task<RecommendationDashboardDto> GetDashboardAsync()
     {
-        var activeStocks = await _db.Stocks.Where(s => s.IsActive).ToListAsync();
-        
-        // Fetch latest analysis per active stock using a projection
-        var latestAnalyses = await _db.Stocks
-            .Where(s => s.IsActive)
-            .Select(s => s.StockAnalyses.OrderByDescending(a => a.AnalyzedAt).FirstOrDefault())
-            .Where(a => a != null)
-            .ToListAsync();
-            
-        // Link navigation properties manually since Include is lost in projection
-        foreach(var a in latestAnalyses) 
-        {
-            a!.Stock = activeStocks.FirstOrDefault(s => s.Id == a.StockId);
-        }
-        latestAnalyses.RemoveAll(a => a.Stock == null);
+        var stocksData = await _repo.GetStocksWithDataAsync();
 
-        // Get latest intrinsic valuation and quality for extra details
-        var valuations = await _db.Stocks
-            .Where(s => s.IsActive)
-            .Select(s => s.IntrinsicValuations.OrderByDescending(v => v.ComputedAt).FirstOrDefault())
-            .Where(v => v != null)
-            .ToDictionaryAsync(v => v!.StockId);
-            
-        var qualities = await _db.Stocks
-            .Where(s => s.IsActive)
-            .Select(s => s.QualityMetrics.OrderByDescending(q => q.AsOfDate).FirstOrDefault())
-            .Where(q => q != null)
-            .ToDictionaryAsync(q => q!.StockId);
-
-        var recommendations = latestAnalyses.Select(a =>
-        {
-            valuations.TryGetValue(a!.StockId, out var v);
-            qualities.TryGetValue(a.StockId, out var q);
-            return MapToRecommendationDto(a, v, q);
-        }).ToList();
+        var recommendations = stocksData
+            .Where(d => d.Analysis != null)
+            .Select(d =>
+            {
+                var a = d.Analysis!;
+                a.Stock = d.Stock; // Link for MapToRecommendationDto
+                return MapToRecommendationDto(a, d.Valuation, d.Quality, d.Fundamental);
+            }).ToList();
 
         var topBullish = recommendations
             .Where(r => r.OverallSignal == "Strong Bullish" || r.OverallSignal == "Bullish")
@@ -72,7 +46,9 @@ public class RecommendationService : IRecommendationService
             .Take(5)
             .ToList();
 
-        var sectors = activeStocks.Where(s => s.Sector != null)
+        var sectors = stocksData
+            .Select(d => d.Stock)
+            .Where(s => s.Sector != null)
             .GroupBy(s => s.Sector!)
             .Select(g => new SectorPerformanceDto(
                 g.Key, 
@@ -96,49 +72,16 @@ public class RecommendationService : IRecommendationService
 
     public async Task<List<StockRecommendationDto>> ScreenStocksAsync(ScreenerFilters filters)
     {
-        var activeStocks = await _db.Stocks.Where(s => s.IsActive).ToListAsync();
+        var stocksData = await _repo.GetStocksWithDataAsync();
         
-        var latestAnalyses = await _db.Stocks
-            .Where(s => s.IsActive)
-            .Select(s => s.StockAnalyses.OrderByDescending(a => a.AnalyzedAt).FirstOrDefault())
-            .Where(a => a != null)
-            .ToListAsync();
-            
-        foreach(var a in latestAnalyses) 
-        {
-            var stock = activeStocks.FirstOrDefault(s => s.Id == a!.StockId);
-            if (stock != null)
-                a!.Stock = stock;
-        }
-            
-        var stockIds = latestAnalyses.Select(a => a!.StockId).ToList();
-        
-        var valuations = await _db.Stocks
-            .Where(s => s.IsActive)
-            .Select(s => s.IntrinsicValuations.OrderByDescending(v => v.ComputedAt).FirstOrDefault())
-            .Where(v => v != null)
-            .ToDictionaryAsync(v => v!.StockId);
-            
-        var qualities = await _db.Stocks
-            .Where(s => s.IsActive)
-            .Select(s => s.QualityMetrics.OrderByDescending(q => q.AsOfDate).FirstOrDefault())
-            .Where(q => q != null)
-            .ToDictionaryAsync(q => q!.StockId);
-            
-        var fundamentals = await _db.Stocks
-            .Where(s => s.IsActive)
-            .Select(s => s.FundamentalMetrics.OrderByDescending(f => f.PeriodEndDate).FirstOrDefault())
-            .Where(f => f != null)
-            .ToDictionaryAsync(f => f!.StockId);
-
-        var recommendations = latestAnalyses.Select(a =>
-        {
-            valuations.TryGetValue(a!.StockId, out var v);
-            qualities.TryGetValue(a.StockId, out var q);
-            fundamentals.TryGetValue(a.StockId, out var f);
-            
-            return new { Analysis = a, Val = v, Qual = q, Fund = f, Dto = MapToRecommendationDto(a, v, q, f) };
-        });
+        var recommendations = stocksData
+            .Where(d => d.Analysis != null)
+            .Select(d =>
+            {
+                var a = d.Analysis!;
+                a.Stock = d.Stock; // Link for MapToRecommendationDto
+                return new { Analysis = a, Val = d.Valuation, Qual = d.Quality, Fund = d.Fundamental, Dto = MapToRecommendationDto(a, d.Valuation, d.Quality, d.Fundamental) };
+            });
         
         // Apply Filters
         if (filters.MinScore.HasValue)
@@ -187,57 +130,25 @@ public class RecommendationService : IRecommendationService
 
     public async Task<List<PeerComparisonDto>> GetPeersAsync(Guid stockId)
     {
-        var targetStock = await _db.Stocks.FindAsync(stockId);
+        var allStocks = await _repo.GetAllAsync();
+        var targetStock = allStocks.FirstOrDefault(s => s.Id == stockId);
         if (targetStock == null || string.IsNullOrEmpty(targetStock.Sector)) return new List<PeerComparisonDto>();
 
-        var peers = await _db.Stocks
-            .Where(s => s.Sector == targetStock.Sector && s.IsActive)
-            .ToListAsync();
+        var peersData = await _repo.GetStocksWithDataAsync(targetStock.Sector);
             
-        var peerIds = peers.Select(p => p.Id).ToList();
-
-        var latestAnalyses = await _db.StockAnalyses
-            .Where(a => peerIds.Contains(a.StockId))
-            .GroupBy(a => a.StockId)
-            .Select(g => g.OrderByDescending(a => a.AnalyzedAt).FirstOrDefault())
-            .ToDictionaryAsync(a => a!.StockId);
-
-        var valuations = await _db.IntrinsicValuations
-            .Where(v => peerIds.Contains(v.StockId))
-            .GroupBy(v => v.StockId)
-            .Select(g => g.OrderByDescending(v => v.ComputedAt).FirstOrDefault())
-            .ToDictionaryAsync(v => v!.StockId);
-
-        var qualities = await _db.QualityMetrics
-            .Where(q => peerIds.Contains(q.StockId))
-            .GroupBy(q => q.StockId)
-            .Select(g => g.OrderByDescending(q => q.AsOfDate).FirstOrDefault())
-            .ToDictionaryAsync(q => q!.StockId);
-
-        var fundamentals = await _db.FundamentalMetrics
-            .Where(f => peerIds.Contains(f.StockId))
-            .GroupBy(f => f.StockId)
-            .Select(g => g.OrderByDescending(f => f.PeriodEndDate).FirstOrDefault())
-            .ToDictionaryAsync(f => f!.StockId);
-
-        var dtos = peers.Select(p =>
+        var dtos = peersData.Select(p =>
         {
-            latestAnalyses.TryGetValue(p.Id, out var a);
-            valuations.TryGetValue(p.Id, out var v);
-            qualities.TryGetValue(p.Id, out var q);
-            fundamentals.TryGetValue(p.Id, out var f);
-
             return new PeerComparisonDto(
-                p.Id, p.Symbol, p.CompanyName, p.Sector,
-                a?.OverallScore ?? 0,
-                a?.TechnicalScore ?? 0,
-                a?.FundamentalScore ?? 0,
-                a?.ValuationScore ?? 0,
-                a?.QualityScore ?? 0,
-                f?.PERatio, f?.PBRatio, f?.ROE, f?.DebtToEquity, f?.DividendYield,
-                p.MarketCap,
-                v?.UpsidePercent,
-                q?.PiotroskiFScore
+                p.Stock.Id, p.Stock.Symbol, p.Stock.CompanyName, p.Stock.Sector,
+                p.Analysis?.OverallScore ?? 0,
+                p.Analysis?.TechnicalScore ?? 0,
+                p.Analysis?.FundamentalScore ?? 0,
+                p.Analysis?.ValuationScore ?? 0,
+                p.Analysis?.QualityScore ?? 0,
+                p.Fundamental?.PERatio, p.Fundamental?.PBRatio, p.Fundamental?.ROE, p.Fundamental?.DebtToEquity, p.Fundamental?.DividendYield,
+                p.Stock.MarketCap,
+                p.Valuation?.UpsidePercent,
+                p.Quality?.PiotroskiFScore
             );
         }).OrderByDescending(p => p.OverallScore).ToList();
 

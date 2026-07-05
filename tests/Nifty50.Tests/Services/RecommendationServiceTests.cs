@@ -40,7 +40,8 @@ public class RecommendationServiceTests
 
         await context.SaveChangesAsync();
 
-        var service = new RecommendationService(context);
+        var repo = new Nifty50.Infrastructure.Repositories.StockRepository(context);
+        var service = new RecommendationService(repo);
 
         // Act
         var dashboard = await service.GetDashboardAsync();
