@@ -286,24 +286,11 @@ public class AdminController : ControllerBase
     public ActionResult<List<ApiCallRecord>> GetApiCalls([FromQuery] string? api, [FromQuery] int limit = 50) =>
         Ok(_monitor.GetRecentCalls(api, Math.Clamp(limit, 1, 1000)));
 
-    [HttpPost("/api/refresh")]
-    public ActionResult Refresh([FromServices] Microsoft.Extensions.DependencyInjection.IServiceScopeFactory scopeFactory)
+    [HttpPost("refresh")]
+    public ActionResult Refresh([FromServices] IDataRefreshService refresh)
     {
-        _ = Task.Run(async () =>
-        {
-            using var scope = scopeFactory.CreateScope();
-            var refresh = scope.ServiceProvider.GetRequiredService<IDataRefreshService>();
-            var logger = scope.ServiceProvider.GetRequiredService<Microsoft.Extensions.Logging.ILogger<AdminController>>();
-            try
-            {
-                await refresh.RefreshAllDataAsync();
-            }
-            catch (Exception ex)
-            {
-                logger.LogError(ex, "Manual data refresh failed.");
-            }
-        });
-        return Ok(new { message = "Refresh started in background" });
+        refresh.RequestManualRefresh();
+        return Ok(new { message = "Refresh queued in background service." });
     }
 }
 

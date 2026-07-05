@@ -13,6 +13,15 @@ public class DataRefreshService : BackgroundService, IDataRefreshService
     private readonly IServiceProvider _services;
     private readonly ILogger<DataRefreshService> _logger;
     private readonly IConfiguration _config;
+    private readonly System.Threading.Channels.Channel<bool> _manualTrigger = System.Threading.Channels.Channel.CreateBounded<bool>(
+        new System.Threading.Channels.BoundedChannelOptions(1) { FullMode = System.Threading.Channels.BoundedChannelFullMode.DropOldest });
+    private bool _isManualTrigger = false;
+
+    public void RequestManualRefresh()
+    {
+        _isManualTrigger = true;
+        _manualTrigger.Writer.TryWrite(true);
+    }
 
     // Nifty50 seed list (Yahoo Finance symbols with .NS suffix).
     // These are the only hardcoded values in the system — just symbol→name mappings
@@ -64,22 +73,30 @@ public class DataRefreshService : BackgroundService, IDataRefreshService
             // to avoid burning Yahoo/GNews API quotas on every wake-up.
             var skipRefresh = false;
             var skipHours = _config.GetValue<double>("DataRefresh:SkipIfRecentHours", 12.0);
-            try
+            if (!_isManualTrigger)
             {
-                using var checkScope = _services.CreateScope();
-                var checkDb = checkScope.ServiceProvider.GetRequiredService<Nifty50.Infrastructure.Data.AppDbContext>();
-                var lastRefresh = await checkDb.StockPrices.MaxAsync(p => (DateTime?)p.UpdatedAt, stoppingToken);
-                if (lastRefresh.HasValue && DateTime.UtcNow - lastRefresh.Value < TimeSpan.FromHours(skipHours))
+                try
                 {
-                    skipRefresh = true;
-                    _logger.LogInformation(
-                        "Skipping data refresh — last refresh was {Ago:F1} hours ago (threshold: {Threshold}h).",
-                        (DateTime.UtcNow - lastRefresh.Value).TotalHours, skipHours);
+                    using var checkScope = _services.CreateScope();
+                    var checkDb = checkScope.ServiceProvider.GetRequiredService<Nifty50.Infrastructure.Data.AppDbContext>();
+                    var lastRefresh = await checkDb.StockPrices.MaxAsync(p => (DateTime?)p.UpdatedAt, stoppingToken);
+                    if (lastRefresh.HasValue && DateTime.UtcNow - lastRefresh.Value < TimeSpan.FromHours(skipHours))
+                    {
+                        skipRefresh = true;
+                        _logger.LogInformation(
+                            "Skipping data refresh — last refresh was {Ago:F1} hours ago (threshold: {Threshold}h).",
+                            (DateTime.UtcNow - lastRefresh.Value).TotalHours, skipHours);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogWarning(ex, "Could not check last refresh time, proceeding with refresh.");
                 }
             }
-            catch (Exception ex)
+            else
             {
-                _logger.LogWarning(ex, "Could not check last refresh time, proceeding with refresh.");
+                _logger.LogInformation("Manual refresh requested, bypassing recent refresh check.");
+                _isManualTrigger = false;
             }
 
             if (!skipRefresh)
@@ -98,7 +115,13 @@ public class DataRefreshService : BackgroundService, IDataRefreshService
 
             var intervalHours = _config.GetValue<double>("DataRefresh:IntervalHours", 24.0);
             _logger.LogInformation("Next refresh scheduled in {Hours} hours.", intervalHours);
-            await Task.Delay(TimeSpan.FromHours(intervalHours), stoppingToken);
+            try 
+            {
+                using var cts = CancellationTokenSource.CreateLinkedTokenSource(stoppingToken);
+                cts.CancelAfter(TimeSpan.FromHours(intervalHours));
+                await _manualTrigger.Reader.ReadAsync(cts.Token);
+            }
+            catch (OperationCanceledException) { }
         }
     }
 

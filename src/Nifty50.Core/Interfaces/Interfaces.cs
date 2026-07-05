@@ -97,6 +97,7 @@ public interface IApiMonitorService
 public interface IDataRefreshService
 {
     Task RefreshAllDataAsync(CancellationToken ct = default);
+    void RequestManualRefresh();
 }
 
 public interface IStockMetadataService
