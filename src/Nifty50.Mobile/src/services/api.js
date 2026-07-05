@@ -3,7 +3,7 @@ import { Platform } from 'react-native';
 
 // Use production API if deployed, otherwise fallback to local dev
 // You might need to change localhost to your dev machine IP (e.g. 192.168.x.x) for physical device testing
-const API_BASE_URL = 'https://stockfinder-8jyy.onrender.com/api';
+const API_BASE_URL = process.env.EXPO_PUBLIC_API_BASE_URL ?? 'http://10.0.2.2:5276/api';
 
 const apiClient = axios.create({
     baseURL: API_BASE_URL,
