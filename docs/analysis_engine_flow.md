@@ -72,4 +72,12 @@ For example, a **"Value Investor"** profile might be configured as:
 
 Additionally, there are **sub-weights** within the Technical and Fundamental categories. For instance, the Technical category has internal weights for RSI, MACD, Moving Averages, Bollinger Bands, ADX, and Volume. 
 
+**Recent Enhancements:**
+- **Sentiment Scoring:** Uses a sigmoid (tanh) curve for smooth variance and applies a confidence penalty if there are too few news articles, avoiding extreme scores from single articles. Evaluates bigrams and 3-word negation windows specific to the Indian market.
+- **Technical Scoring:** 
+  - **MACD:** Scored dynamically based on histogram magnitude relative to current price.
+  - **ADX:** Evaluated directionally using +DI vs -DI crossovers rather than absolute trend strength.
+  - **OBV:** Evaluated directionally against a 20-period Simple Moving Average of the OBV line.
+- **Fundamental & Valuation Scoring:** P/E Ratio is scored in the Fundamental metrics, while the Valuation dimension is reserved exclusively for Intrinsic Value (Fair Value / Graham Number / Upside Percentage) to prevent double-counting.
+
 When the engine runs, it first calculates each category's score using its internal sub-weights. Then, it multiplies the raw 0-100 score of each category by the top-level percentages to determine the stock's final `OverallScore`.
