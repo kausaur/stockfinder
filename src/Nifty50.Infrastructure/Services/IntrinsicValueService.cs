@@ -42,19 +42,11 @@ public class IntrinsicValueService : IIntrinsicValueService
             valuation.PEGRatio = metric.PERatio.Value / metric.EarningsGrowthYoY.Value;
         }
 
-        // 3. Earnings Power Value: (OperatingIncome * (1 - TaxRate)) / DiscountRate / Shares
-        // Note: For EPV we need per share operating income.
-        // Approx: OperatingIncome per share = EPS / NetProfitMargin * OperatingMargin
-        if (metric.EPS.HasValue && metric.EPS.Value > 0 &&
-            metric.NetProfitMargin.HasValue && metric.NetProfitMargin.Value > 0 &&
-            metric.OperatingMargin.HasValue)
+        // 3. Earnings Power Value (EPV)
+        // EPS is already after-tax earnings per share, so we can capitalize it directly as a simplified EPV
+        if (metric.EPS.HasValue && metric.EPS.Value > 0)
         {
-            var ebitPerShare = metric.EPS.Value * (metric.OperatingMargin.Value / metric.NetProfitMargin.Value);
-            if (ebitPerShare > 0)
-            {
-                var nopatPerShare = ebitPerShare * (1 - TaxRate);
-                valuation.EarningsPowerValue = nopatPerShare / DiscountRate;
-            }
+            valuation.EarningsPowerValue = metric.EPS.Value / DiscountRate;
         }
 
         // 4. Composite Fair Value Estimate
