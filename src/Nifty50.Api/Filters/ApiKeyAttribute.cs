@@ -27,7 +27,9 @@ public class ApiKeyAttribute : Attribute, IAsyncActionFilter
             return;
         }
 
-        if (!apiKey.Equals(extractedApiKey))
+        if (!System.Security.Cryptography.CryptographicOperations.FixedTimeEquals(
+            System.Text.Encoding.UTF8.GetBytes(apiKey),
+            System.Text.Encoding.UTF8.GetBytes(extractedApiKey.ToString())))
         {
             context.Result = new UnauthorizedObjectResult("Unauthorized client.");
             return;
