@@ -42,6 +42,6 @@ public class QualityAssessmentServiceTests
         // Assert
         Assert.NotNull(result);
         Assert.Equal(stockId, result.StockId);
-        Assert.Equal(9, result.PiotroskiFScore);
+        Assert.Equal(8, result.PiotroskiFScore);
     }
 }

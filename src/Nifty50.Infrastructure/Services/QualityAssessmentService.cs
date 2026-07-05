@@ -128,10 +128,8 @@ public class QualityAssessmentService : IQualityAssessmentService
             if (crImproved) score++;
             breakdown["CurrentRatioImproved"] = crImproved;
 
-            // 7. No Share Dilution (Proxy: if no data, assume true for now or skip)
-            bool noDilution = true; // Assuming mock data doesn't have outstanding shares history
-            if (noDilution) score++;
-            breakdown["NoShareDilution"] = noDilution;
+            // 7. No Share Dilution
+            // Skipped because we do not currently track SharesOutstanding history. F-Score is out of 8.
 
             // 8. Gross Margin Improved
             var currentGm = current.TotalRevenue > 0 ? (current.GrossProfit ?? 0) / current.TotalRevenue.Value : 0;
