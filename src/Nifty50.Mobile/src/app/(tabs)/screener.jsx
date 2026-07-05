@@ -9,7 +9,7 @@ export default function ScreenerScreen() {
     const [loading, setLoading] = useState(false);
     const [filters, setFilters] = useState({
         MinScore: '60',
-        Signals: 'Bullish Signal, Strong Bullish',
+        Signals: 'Bullish, Strong Bullish',
     });
     const router = useRouter();
 
@@ -83,7 +83,7 @@ export default function ScreenerScreen() {
                             className="bg-slate-800 text-white p-2 rounded-lg text-sm"
                             value={filters.Signals}
                             onChangeText={v => updateFilter('Signals', v)}
-                            placeholder="Buy, Strong Buy"
+                            placeholder="Bullish, Strong Bullish"
                             placeholderTextColor="#64748b"
                         />
                     </View>
