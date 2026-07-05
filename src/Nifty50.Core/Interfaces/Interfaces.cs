@@ -83,7 +83,7 @@ public interface IScoringProfileService
 
 public interface IStockAnalysisEngine
 {
-    Task<StockAnalysis> AnalyzeStockAsync(Guid stockId);
+    Task<StockAnalysis> AnalyzeStockAsync(Guid stockId, ScoringProfile? profile = null);
     Task<List<StockAnalysis>> RecalculateAllAsync();
 }
 

@@ -19,9 +19,9 @@ public class StockAnalysisEngine : IStockAnalysisEngine
         _logger = logger;
     }
 
-    public async Task<StockAnalysis> AnalyzeStockAsync(Guid stockId)
+    public async Task<StockAnalysis> AnalyzeStockAsync(Guid stockId, ScoringProfile? profile = null)
     {
-        var profile = await _profileService.GetActiveProfileAsync();
+        profile ??= await _profileService.GetActiveProfileAsync();
         var tech = await _repo.GetLatestTechnicalAsync(stockId);
         var fund = await _repo.GetLatestFundamentalAsync(stockId);
         var sent = await _repo.GetLatestSentimentAsync(stockId);
@@ -108,11 +108,12 @@ public class StockAnalysisEngine : IStockAnalysisEngine
         var alerts = new List<StockAnalysis>();
         var startTime = DateTime.UtcNow;
         var stocks = await _repo.GetAllAsync();
+        var profile = await _profileService.GetActiveProfileAsync();
         foreach (var stock in stocks)
         {
             try 
             { 
-                var analysis = await AnalyzeStockAsync(stock.Id); 
+                var analysis = await AnalyzeStockAsync(stock.Id, profile); 
                 if (analysis.IsAlert)
                 {
                     alerts.Add(analysis);
