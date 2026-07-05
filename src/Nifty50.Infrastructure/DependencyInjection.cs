@@ -56,7 +56,7 @@ public static class DependencyInjection
         // HTTP clients with Polly retry
         var retryPolicy = Policy<HttpResponseMessage>
             .Handle<HttpRequestException>()
-            .OrResult(r => !r.IsSuccessStatusCode)
+            .OrResult(r => (int)r.StatusCode >= 500 || r.StatusCode == System.Net.HttpStatusCode.RequestTimeout || (int)r.StatusCode == 429)
             .WaitAndRetryAsync(3, attempt => TimeSpan.FromSeconds(Math.Pow(2, attempt)));
 
         services.AddHttpClient<IYahooCookieManager, YahooCookieManager>()
