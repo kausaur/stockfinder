@@ -265,7 +265,10 @@ public class StockRepository : IStockRepository
             .Select(a => new AnalysisDto(a.StockId, a.Stock.Symbol, a.Stock.CompanyName, a.AnalyzedAt,
                 a.TechnicalSignal.ToString(), a.FundamentalSignal.ToString(), a.SentimentSignal.ToString(), a.OverallSignal.ToString(),
                 a.TechnicalScore, a.FundamentalScore, a.SentimentScore, a.DividendScore, a.OverallScore,
-                a.Reasoning, a.IsAlert, a.AlertMessage, a.ScoringProfile.Name)).ToListAsync();
+                a.Reasoning, a.IsAlert, a.AlertMessage, a.ScoringProfile.Name,
+                a.ValuationScore, a.QualityScore, 
+                a.ValuationSignal.HasValue ? a.ValuationSignal.ToString() : null, 
+                a.QualitySignal.HasValue ? a.QualitySignal.ToString() : null)).ToListAsync();
         var sectors = stocks.Where(s => s.Sector != null).GroupBy(s => s.Sector!)
             .Select(g => new SectorPerformanceDto(g.Key, g.Average(s => s.DayChangePercent ?? 0), g.Count())).ToList();
         return new DashboardDto(topGainers, topLosers, alerts, sectors, stocks.Count, alerts.Count);
