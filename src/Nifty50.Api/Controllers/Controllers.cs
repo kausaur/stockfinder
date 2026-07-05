@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using Nifty50.Core.DTOs;
 using Nifty50.Core.Interfaces;
 using Nifty50.Api.Filters;
@@ -312,6 +313,7 @@ public class RecommendationsController : ControllerBase
     }
 
     [HttpPost("screener")]
+    [EnableRateLimiting("ScreenerPolicy")]
     public async Task<ActionResult<List<StockRecommendationDto>>> Screen([FromBody] ScreenerFilters filters)
     {
         return Ok(await _service.ScreenStocksAsync(filters));

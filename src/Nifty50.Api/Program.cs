@@ -1,4 +1,6 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.RateLimiting;
+using System.Threading.RateLimiting;
 using Nifty50.Infrastructure;
 using Nifty50.Infrastructure.Data;
 
@@ -28,6 +30,17 @@ builder.Services.AddMemoryCache();
 builder.Services.AddResponseCaching();
 builder.Services.AddHealthChecks();
 
+builder.Services.AddRateLimiter(options =>
+{
+    options.AddFixedWindowLimiter("ScreenerPolicy", opt =>
+    {
+        opt.PermitLimit = 5;
+        opt.Window = TimeSpan.FromSeconds(10);
+        opt.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
+        opt.QueueLimit = 2;
+    });
+});
+
 var app = builder.Build();
 
 app.UseExceptionHandler(errorApp => {
@@ -56,6 +69,7 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 app.UseCors("AllowFrontend");
+app.UseRateLimiter();
 app.UseResponseCaching();
 app.MapHealthChecks("/healthz");
 app.MapControllers();
