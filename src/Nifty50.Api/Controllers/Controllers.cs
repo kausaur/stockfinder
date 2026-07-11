@@ -45,7 +45,7 @@ public class PricesController : ControllerBase
     public PricesController(IStockRepository repo) => _repo = repo;
 
     [HttpGet("prices")]
-    [ResponseCache(Duration = 300)]
+    [ResponseCache(Duration = 300, VaryByQueryKeys = new[] { "from", "to" })]
     public async Task<ActionResult<List<StockPriceDto>>> GetPrices(Guid stockId, [FromQuery] DateTime? from, [FromQuery] DateTime? to)
     {
         var prices = await _repo.GetPricesAsync(stockId, from, to);
