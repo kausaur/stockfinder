@@ -56,7 +56,7 @@ export default function StockDetail() {
 
     const chart = createChart(chartRef.current, {
       width: chartRef.current.clientWidth, height: 400,
-      layout: { background: { color: 'transparent' }, textColor: '#94a3b8' },
+      layout: { background: { color: 'transparent' }, textColor: '#94a3b8', attributionLogo: false },
       grid: { vertLines: { color: '#1e293b' }, horzLines: { color: '#1e293b' } },
       crosshair: { mode: 0 }, timeScale: { borderColor: '#334155' },
     });
