@@ -154,7 +154,10 @@ export default function StockDetail() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Technical Panel */}
         <div className="glass-card p-5">
-          <h3 className="text-sm font-semibold text-slate-300 mb-4">📉 Technical Indicators</h3>
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-sm font-semibold text-slate-300">📉 Technical Indicators</h3>
+            {technicals?.date && <span className="text-xs text-slate-500">as of {new Date(technicals.date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}</span>}
+          </div>
           {technicals ? (
             <div className="grid grid-cols-2 gap-3">
               {[
@@ -176,7 +179,10 @@ export default function StockDetail() {
 
         {/* Fundamental Panel */}
         <div className="glass-card p-5">
-          <h3 className="text-sm font-semibold text-slate-300 mb-4">📊 Fundamental Ratios</h3>
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-sm font-semibold text-slate-300">📊 Fundamental Ratios</h3>
+            {fundamentals?.computedAt && <span className="text-xs text-slate-500">as of {new Date(fundamentals.computedAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}</span>}
+          </div>
           {fundamentals ? (
             <div className="grid grid-cols-2 gap-3">
               {[
@@ -199,7 +205,10 @@ export default function StockDetail() {
 
       {/* Sentiment Panel */}
       <div className="glass-card p-5">
-        <h3 className="text-sm font-semibold text-slate-300 mb-4">🗞️ Sentiment Analysis</h3>
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-sm font-semibold text-slate-300">🗞️ Sentiment Analysis</h3>
+          {sentiment?.analyzedAt && <span className="text-xs text-slate-500">as of {new Date(sentiment.analyzedAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}</span>}
+        </div>
         {sentiment ? (
           <div>
             <div className="flex flex-col md:flex-row items-start md:items-center gap-4 md:gap-6 mb-4">

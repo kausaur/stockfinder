@@ -10,13 +10,15 @@ public class TechnicalAnalysisService : ITechnicalAnalysisService
     {
         if (prices.Count < 30) return new List<TechnicalIndicator>();
 
+        // Use AdjClose (adjusted for splits/dividends) for indicator calculations
+        // to match industry-standard platforms (TradingView, Moneycontrol, Screener.in)
         var quotes = prices.OrderBy(p => p.Date).Select(p => new Quote
         {
             Date = p.Date,
             Open = p.Open,
             High = p.High,
             Low = p.Low,
-            Close = p.Close,
+            Close = p.AdjClose != 0 ? p.AdjClose : p.Close,
             Volume = p.Volume
         }).ToList();
 
