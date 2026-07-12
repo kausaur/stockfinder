@@ -24,9 +24,9 @@ public class GNewsSentimentServiceTests
         
         var jsonResponse = @"{
             ""articles"": [
-                { ""title"": ""Company shows strong profit and great growth"" },
-                { ""title"": ""New breakthrough product announced"" },
-                { ""title"": ""Stock market sees neutral movement today"" }
+                { ""title"": ""Reliance shows strong profit and great growth"" },
+                { ""title"": ""Reliance announces new breakthrough product"" },
+                { ""title"": ""Reliance stock sees neutral movement today"" }
             ]
         }";
 
@@ -48,7 +48,7 @@ public class GNewsSentimentServiceTests
         mockConfig.Setup(c => c["GNewsApiKey"]).Returns("test-key");
         var service = new GNewsSentimentService(httpClient, mockLogger.Object, mockMonitor.Object, mockConfig.Object);
 
-        var result = await service.AnalyzeSentimentAsync("Test Company", "TEST");
+        var result = await service.AnalyzeSentimentAsync("Reliance Industries", "RELIANCE.NS");
 
         Assert.NotNull(result);
         Assert.True(result.PositiveCount > 0);
