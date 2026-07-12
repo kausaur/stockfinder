@@ -255,8 +255,9 @@ public class DataRefreshService : BackgroundService, IDataRefreshService
                     await repo.UpsertQualityMetricAsync(quality);
                 }
 
-                // 7. Calculate technical indicators from stored price history (limit to last 250 days to save memory)
-                var allPrices = await repo.GetPricesAsync(stock.Id, DateTime.UtcNow.AddDays(-250), null);
+                // 7. Calculate technical indicators from stored price history
+                // Need at least 400 calendar days (~280 trading days) for SMA 200 + warm-up period
+                var allPrices = await repo.GetPricesAsync(stock.Id, DateTime.UtcNow.AddDays(-400), null);
                 if (allPrices.Count >= 30)
                 {
                     var indicators = techService.CalculateIndicators(stock.Id, allPrices);
