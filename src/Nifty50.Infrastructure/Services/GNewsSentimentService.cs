@@ -37,6 +37,7 @@ public class GNewsSentimentService : ISentimentService
         // Try GNews first if API key is configured
         var headlines = new List<string>();
         string source = "None";
+        var cleanSymbol = symbol.Replace(".NS", "").Replace(".BO", "");
 
         if (!string.IsNullOrEmpty(_apiKey) && _apiKey != "YOUR_GNEWS_API_KEY")
         {
@@ -52,7 +53,10 @@ public class GNewsSentimentService : ISentimentService
             source = headlines.Count > 0 ? "Yahoo" : "None";
         }
 
-        _logger.LogInformation("Sentiment for {Symbol}: {Count} headlines from {Source}", symbol, headlines.Count, source);
+        // Filter out irrelevant headlines that don't mention the company or symbol
+        headlines = FilterRelevantHeadlines(headlines, companyName, cleanSymbol);
+
+        _logger.LogInformation("Sentiment for {Symbol}: {Count} relevant headlines from {Source}", symbol, headlines.Count, source);
 
         int pos = 0, neg = 0, neut = 0;
         decimal totalScore = 0;
@@ -118,9 +122,10 @@ public class GNewsSentimentService : ISentimentService
         }
     }
 
-    /// <summary>Fallback: fetches headlines from Yahoo Finance search endpoint</summary>
+    /// <summary>Fallback: fetches headlines from Yahoo Finance search endpoint using the ticker symbol</summary>
     private async Task<List<string>> FetchYahooHeadlinesAsync(string symbol)
     {
+        // Use the full .NS symbol for ticker-specific results from Yahoo
         var url = $"https://query2.finance.yahoo.com/v1/finance/search?q={Uri.EscapeDataString(symbol)}&newsCount=10";
         var sw = System.Diagnostics.Stopwatch.StartNew();
         try
@@ -147,6 +152,35 @@ public class GNewsSentimentService : ISentimentService
             _monitor.RecordApiCall(new ApiCallRecord("YahooNews", url, DateTime.UtcNow, 500, sw.ElapsedMilliseconds, ex.Message));
             return new List<string>();
         }
+    }
+
+    /// <summary>Filters headlines to only include those relevant to the company</summary>
+    private static List<string> FilterRelevantHeadlines(List<string> headlines, string companyName, string cleanSymbol)
+    {
+        if (headlines.Count == 0) return headlines;
+
+        // Build a set of keywords to match against
+        var keywords = new List<string> { cleanSymbol.ToLowerInvariant() };
+
+        // Split company name into significant words (skip short/common words)
+        var stopWords = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+        {
+            "ltd", "limited", "corp", "corporation", "inc", "industries", "company",
+            "the", "of", "and", "&", "co", "pvt", "private"
+        };
+        foreach (var word in companyName.Split(new[] { ' ', '.', ',', '-', '&' }, StringSplitOptions.RemoveEmptyEntries))
+        {
+            if (word.Length >= 3 && !stopWords.Contains(word))
+                keywords.Add(word.ToLowerInvariant());
+        }
+
+        var relevant = headlines.Where(h =>
+        {
+            var lower = h.ToLowerInvariant();
+            return keywords.Any(k => lower.Contains(k));
+        }).ToList();
+
+        return relevant;
     }
 
     // ScoreHeadline method moved to SentimentScoringHelper.cs
