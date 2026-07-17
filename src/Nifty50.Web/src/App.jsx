@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import Layout from './components/Layout';
 import Dashboard from './pages/Dashboard';
 import StockList from './pages/StockList';
@@ -17,6 +17,7 @@ export default function App() {
       <Routes>
         <Route element={<Layout />}>
           <Route path="/" element={<Dashboard />} />
+          <Route path="/index.html" element={<Navigate to="/" replace />} />
           <Route path="/stocks" element={<StockList />} />
           <Route path="/stocks/:id" element={<StockDetail />} />
           <Route path="/alerts" element={<Alerts />} />
