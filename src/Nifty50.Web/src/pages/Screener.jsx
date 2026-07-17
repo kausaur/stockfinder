@@ -50,46 +50,49 @@ const Screener = () => {
     }));
   };
 
+  const inputClass = "w-full bg-slate-800/50 border border-slate-700/50 rounded-lg px-3 py-2 text-white text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none";
+  const selectClass = "w-full bg-slate-800/50 border border-slate-700/50 rounded-lg px-3 py-2 text-white text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none appearance-none";
+
   return (
-    <div className="p-6 max-w-7xl mx-auto space-y-6">
-      <h1 className="text-3xl font-bold">Stock Screener</h1>
+    <div className="space-y-6">
+      <h1 className="text-2xl font-bold text-white">Stock Screener</h1>
       
-      <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+      <div className="glass-card p-5">
         <form onSubmit={handleSearch} className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4">
           
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Min Overall Score</label>
-            <input type="number" name="MinScore" value={filters.MinScore} onChange={handleFilterChange} className="w-full border-gray-300 rounded-md shadow-sm focus:border-primary focus:ring-primary" />
+            <label className="block text-xs font-medium text-slate-400 mb-1.5">Min Overall Score</label>
+            <input type="number" name="MinScore" value={filters.MinScore} onChange={handleFilterChange} className={inputClass} />
           </div>
           
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Max P/E Ratio</label>
-            <input type="number" name="MaxPE" value={filters.MaxPE} onChange={handleFilterChange} className="w-full border-gray-300 rounded-md shadow-sm focus:border-primary focus:ring-primary" />
+            <label className="block text-xs font-medium text-slate-400 mb-1.5">Max P/E Ratio</label>
+            <input type="number" name="MaxPE" value={filters.MaxPE} onChange={handleFilterChange} className={inputClass} />
           </div>
           
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Min ROE (%)</label>
-            <input type="number" name="MinROE" value={filters.MinROE} onChange={handleFilterChange} className="w-full border-gray-300 rounded-md shadow-sm focus:border-primary focus:ring-primary" />
+            <label className="block text-xs font-medium text-slate-400 mb-1.5">Min ROE (%)</label>
+            <input type="number" name="MinROE" value={filters.MinROE} onChange={handleFilterChange} className={inputClass} />
           </div>
           
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Max Debt/Equity</label>
-            <input type="number" step="0.1" name="MaxDebtToEquity" value={filters.MaxDebtToEquity} onChange={handleFilterChange} className="w-full border-gray-300 rounded-md shadow-sm focus:border-primary focus:ring-primary" />
+            <label className="block text-xs font-medium text-slate-400 mb-1.5">Max Debt/Equity</label>
+            <input type="number" step="0.1" name="MaxDebtToEquity" value={filters.MaxDebtToEquity} onChange={handleFilterChange} className={inputClass} />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Min Dividend Yield (%)</label>
-            <input type="number" step="0.1" name="MinDividendYield" value={filters.MinDividendYield} onChange={handleFilterChange} className="w-full border-gray-300 rounded-md shadow-sm focus:border-primary focus:ring-primary" />
+            <label className="block text-xs font-medium text-slate-400 mb-1.5">Min Dividend Yield (%)</label>
+            <input type="number" step="0.1" name="MinDividendYield" value={filters.MinDividendYield} onChange={handleFilterChange} className={inputClass} />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Min Piotroski F-Score (0-9)</label>
-            <input type="number" min="0" max="9" name="MinPiotroskiScore" value={filters.MinPiotroskiScore} onChange={handleFilterChange} className="w-full border-gray-300 rounded-md shadow-sm focus:border-primary focus:ring-primary" />
+            <label className="block text-xs font-medium text-slate-400 mb-1.5">Min Piotroski F-Score (0-9)</label>
+            <input type="number" min="0" max="9" name="MinPiotroskiScore" value={filters.MinPiotroskiScore} onChange={handleFilterChange} className={inputClass} />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Valuation Verdict</label>
-            <select name="ValuationVerdict" value={filters.ValuationVerdict} onChange={handleFilterChange} className="w-full border-gray-300 rounded-md shadow-sm focus:border-primary focus:ring-primary">
+            <label className="block text-xs font-medium text-slate-400 mb-1.5">Valuation Verdict</label>
+            <select name="ValuationVerdict" value={filters.ValuationVerdict} onChange={handleFilterChange} className={selectClass}>
               <option value="Any">Any</option>
               <option value="Significantly Undervalued">Significantly Undervalued</option>
               <option value="Moderately Undervalued">Moderately Undervalued</option>
@@ -98,8 +101,8 @@ const Screener = () => {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Sort By</label>
-            <select name="SortBy" value={filters.SortBy} onChange={handleFilterChange} className="w-full border-gray-300 rounded-md shadow-sm focus:border-primary focus:ring-primary">
+            <label className="block text-xs font-medium text-slate-400 mb-1.5">Sort By</label>
+            <select name="SortBy" value={filters.SortBy} onChange={handleFilterChange} className={selectClass}>
               <option value="Score">Overall Score (Desc)</option>
               <option value="PE">P/E Ratio (Asc)</option>
               <option value="ROE">ROE (Desc)</option>
@@ -107,62 +110,58 @@ const Screener = () => {
           </div>
 
           <div className="md:col-span-3 lg:col-span-4 flex justify-end mt-2">
-            <button type="submit" disabled={loading} className="bg-primary hover:bg-blue-700 text-white font-bold py-2 px-6 rounded-lg transition-colors shadow-sm disabled:opacity-50">
+            <button type="submit" disabled={loading} className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2.5 px-8 rounded-lg transition-colors disabled:opacity-50">
               {loading ? 'Screening...' : 'Screen Stocks'}
             </button>
           </div>
         </form>
       </div>
 
-      <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-        <div className="p-4 bg-gray-50 border-b border-gray-100 flex justify-between items-center">
-          <h2 className="font-bold text-gray-700">Results ({results.length})</h2>
+      <div className="glass-card overflow-hidden">
+        <div className="px-5 py-4 border-b border-slate-700/50 flex justify-between items-center">
+          <h2 className="text-sm font-semibold text-slate-300">Results ({results.length})</h2>
         </div>
         
         {loading && results.length === 0 ? (
-          <div className="p-8 text-center"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div></div>
+          <div className="flex items-center justify-center h-32"><div className="animate-spin text-3xl">⟳</div></div>
         ) : results.length > 0 ? (
           <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Stock</th>
-                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Score</th>
-                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">P/E</th>
-                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">ROE</th>
-                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Signal</th>
-                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Valuation</th>
+            <table className="min-w-full">
+              <thead>
+                <tr className="border-b border-slate-700/50">
+                  <th className="px-5 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Stock</th>
+                  <th className="px-5 py-3 text-right text-xs font-medium text-slate-500 uppercase tracking-wider">Score</th>
+                  <th className="px-5 py-3 text-right text-xs font-medium text-slate-500 uppercase tracking-wider">P/E</th>
+                  <th className="px-5 py-3 text-right text-xs font-medium text-slate-500 uppercase tracking-wider">ROE</th>
+                  <th className="px-5 py-3 text-right text-xs font-medium text-slate-500 uppercase tracking-wider">Signal</th>
+                  <th className="px-5 py-3 text-right text-xs font-medium text-slate-500 uppercase tracking-wider">Valuation</th>
                 </tr>
               </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
+              <tbody>
                 {results.map(stock => (
-                  <tr key={stock.stockId} className="hover:bg-gray-50">
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="flex items-center">
-                        <div>
-                          <Link to={`/stocks/${stock.stockId}`} className="text-sm font-medium text-primary hover:underline">{stock.symbol}</Link>
-                          <div className="text-xs text-gray-500">{stock.companyName}</div>
-                        </div>
-                      </div>
+                  <tr key={stock.stockId} className="border-b border-slate-800/50 hover:bg-slate-800/30 transition-colors">
+                    <td className="px-5 py-4 whitespace-nowrap">
+                      <Link to={`/stocks/${stock.stockId}`} className="text-sm font-medium text-blue-400 hover:underline">{stock.symbol}</Link>
+                      <div className="text-xs text-slate-500">{stock.companyName}</div>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-right">
-                      <div className={`text-sm font-bold ${stock.overallScore >= 70 ? 'text-green-600' : stock.overallScore <= 30 ? 'text-red-600' : 'text-gray-900'}`}>
+                    <td className="px-5 py-4 whitespace-nowrap text-right">
+                      <div className={`text-sm font-bold font-mono ${stock.overallScore >= 70 ? 'text-emerald-400' : stock.overallScore <= 30 ? 'text-red-400' : 'text-white'}`}>
                         {stock.overallScore}
                       </div>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm text-gray-500">
-                      {stock.pe ? stock.pe.toFixed(1) : '-'}
+                    <td className="px-5 py-4 whitespace-nowrap text-right text-sm text-slate-400 font-mono">
+                      {stock.pe ? stock.pe.toFixed(1) : '—'}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm text-gray-500">
-                      {stock.roe ? `${stock.roe.toFixed(1)}%` : '-'}
+                    <td className="px-5 py-4 whitespace-nowrap text-right text-sm text-slate-400 font-mono">
+                      {stock.roe ? `${stock.roe.toFixed(1)}%` : '—'}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                      <span className={`px-2 py-1 rounded-full text-xs ${stock.overallSignal?.includes('Bull') ? 'bg-green-100 text-green-800' : stock.overallSignal?.includes('Bear') ? 'bg-red-100 text-red-800' : 'bg-gray-100 text-gray-800'}`}>
+                    <td className="px-5 py-4 whitespace-nowrap text-right text-sm">
+                      <span className={`px-2.5 py-1 rounded-full text-xs font-bold ${stock.overallSignal?.includes('Bull') ? 'bg-emerald-500/15 text-emerald-400' : stock.overallSignal?.includes('Bear') ? 'bg-red-500/15 text-red-400' : 'bg-slate-700/50 text-slate-400'}`}>
                         {stock.overallSignal}
                       </span>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm text-gray-500">
-                      {stock.valuationVerdict || '-'}
+                    <td className="px-5 py-4 whitespace-nowrap text-right text-sm text-slate-400">
+                      {stock.valuationVerdict || '—'}
                     </td>
                   </tr>
                 ))}
@@ -170,7 +169,7 @@ const Screener = () => {
             </table>
           </div>
         ) : (
-          <div className="p-8 text-center text-gray-500">No stocks match your filter criteria.</div>
+          <div className="p-8 text-center text-slate-500">No stocks match your filter criteria.</div>
         )}
       </div>
     </div>
