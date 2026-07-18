@@ -1,11 +1,26 @@
 import { useState, useEffect } from 'react';
-import { getAdminHealth, getAdminApiCalls } from '../services/api';
+import { getAdminHealth, getAdminApiCalls, refreshData } from '../services/api';
 
 export default function Admin() {
   const [health, setHealth] = useState(null);
   const [calls, setCalls] = useState([]);
   const [filter, setFilter] = useState('');
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [refreshStatus, setRefreshStatus] = useState(null);
+
+  const triggerRefresh = async () => {
+    setRefreshing(true);
+    setRefreshStatus(null);
+    try {
+      await refreshData();
+      setRefreshStatus({ ok: true, msg: 'Refresh queued! Data will update over the next few minutes.' });
+    } catch (err) {
+      setRefreshStatus({ ok: false, msg: `Failed to trigger refresh: ${err?.response?.status === 401 ? 'Invalid API key' : err.message}` });
+    } finally {
+      setRefreshing(false);
+    }
+  };
 
   const load = () => {
     getAdminHealth().then(r => setHealth(r.data)).catch(console.error).finally(() => setLoading(false));
@@ -18,11 +33,27 @@ export default function Admin() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center gap-3">
-        <span className="text-2xl">🔧</span>
-        <h3 className="text-lg font-bold text-white">API Monitor</h3>
-        <span className="text-xs text-slate-500">Auto-refreshes every 30s</span>
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <span className="text-2xl">🔧</span>
+          <h3 className="text-lg font-bold text-white">API Monitor</h3>
+          <span className="text-xs text-slate-500">Auto-refreshes every 30s</span>
+        </div>
+        <button
+          onClick={triggerRefresh}
+          disabled={refreshing}
+          className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white font-semibold px-4 py-2 rounded-lg transition-colors text-sm"
+        >
+          {refreshing ? <span className="animate-spin">⟳</span> : '🔄'}
+          {refreshing ? 'Queuing...' : 'Trigger Data Refresh'}
+        </button>
       </div>
+
+      {refreshStatus && (
+        <div className={`p-3 rounded-lg text-sm ${refreshStatus.ok ? 'bg-emerald-500/10 border border-emerald-500/20 text-emerald-400' : 'bg-red-500/10 border border-red-500/20 text-red-400'}`}>
+          {refreshStatus.ok ? '✅' : '❌'} {refreshStatus.msg}
+        </div>
+      )}
 
       {/* Server Info */}
       {health && (
