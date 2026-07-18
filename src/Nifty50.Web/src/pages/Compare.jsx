@@ -37,59 +37,61 @@ const Compare = () => {
     }
   };
 
-  if (loading) return <div className="p-8 text-center"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div></div>;
-  if (error) return <div className="p-8 text-center text-red-500">{error}</div>;
-  if (!stock) return <div className="p-8 text-center text-red-500">Stock not found.</div>;
+  if (loading) return <div className="flex items-center justify-center h-64"><div className="animate-spin text-4xl">⟳</div></div>;
+  if (error) return <div className="p-8 text-center text-red-400">{error}</div>;
+  if (!stock) return <div className="p-8 text-center text-red-400">Stock not found.</div>;
 
   return (
-    <div className="p-6 max-w-7xl mx-auto space-y-6">
-      <div className="flex items-center gap-4 mb-2">
-        <Link to={`/stocks/${id}`} className="text-gray-500 hover:text-primary">
+    <div className="space-y-6">
+      <div className="flex items-center gap-4">
+        <Link to={`/stocks/${id}`} className="text-slate-500 hover:text-blue-400 transition-colors">
           <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
         </Link>
-        <h1 className="text-3xl font-bold">Peer Comparison: {stock.symbol}</h1>
+        <div>
+          <h1 className="text-2xl font-bold text-white">Peer Comparison: {stock.symbol}</h1>
+          <div className="text-sm text-slate-400">Sector: <span className="font-semibold text-slate-300">{stock.sector}</span></div>
+        </div>
       </div>
-      <div className="text-gray-600">Sector: <span className="font-semibold text-gray-800">{stock.sector}</span></div>
 
-      <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+      <div className="glass-card overflow-hidden">
         {peers.length === 0 ? (
-          <div className="p-8 text-center text-gray-500">
+          <div className="p-8 text-center text-slate-500">
             No peers found in the same sector.
           </div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider sticky left-0 bg-gray-50 z-10">Company</th>
-                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Overall Score</th>
-                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Technical</th>
-                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Fundamental</th>
-                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Valuation</th>
-                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Quality</th>
-                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">P/E Ratio</th>
-                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">ROE (%)</th>
-                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">D/E Ratio</th>
-                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Mkt Cap (Cr)</th>
+            <table className="min-w-full">
+              <thead>
+                <tr className="border-b border-slate-700/50">
+                  <th className="px-5 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider sticky left-0 bg-[#0f172a]/95 backdrop-blur z-10">Company</th>
+                  <th className="px-5 py-3 text-right text-xs font-medium text-slate-500 uppercase tracking-wider">Overall Score</th>
+                  <th className="px-5 py-3 text-right text-xs font-medium text-slate-500 uppercase tracking-wider">Technical</th>
+                  <th className="px-5 py-3 text-right text-xs font-medium text-slate-500 uppercase tracking-wider">Fundamental</th>
+                  <th className="px-5 py-3 text-right text-xs font-medium text-slate-500 uppercase tracking-wider">Valuation</th>
+                  <th className="px-5 py-3 text-right text-xs font-medium text-slate-500 uppercase tracking-wider">Quality</th>
+                  <th className="px-5 py-3 text-right text-xs font-medium text-slate-500 uppercase tracking-wider">P/E Ratio</th>
+                  <th className="px-5 py-3 text-right text-xs font-medium text-slate-500 uppercase tracking-wider">ROE (%)</th>
+                  <th className="px-5 py-3 text-right text-xs font-medium text-slate-500 uppercase tracking-wider">D/E Ratio</th>
+                  <th className="px-5 py-3 text-right text-xs font-medium text-slate-500 uppercase tracking-wider">Mkt Cap (Cr)</th>
                 </tr>
               </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
+              <tbody>
                 {peers.map(p => (
-                  <tr key={p.stockId} className={`hover:bg-gray-50 ${String(p.stockId) === id ? 'bg-blue-50' : ''}`}>
-                    <td className="px-6 py-4 whitespace-nowrap sticky left-0 z-10 bg-inherit">
-                      <Link to={`/stocks/${p.stockId}`} className={`font-semibold ${String(p.stockId) === id ? 'text-primary' : 'text-gray-900'} hover:underline`}>
+                  <tr key={p.stockId} className={`border-b border-slate-800/50 hover:bg-slate-800/30 transition-colors ${String(p.stockId) === id ? 'bg-blue-500/10' : ''}`}>
+                    <td className={`px-5 py-4 whitespace-nowrap sticky left-0 z-10 ${String(p.stockId) === id ? 'bg-blue-500/10' : 'bg-[#0f172a]/95'} backdrop-blur`}>
+                      <Link to={`/stocks/${p.stockId}`} className={`font-semibold ${String(p.stockId) === id ? 'text-blue-400' : 'text-white'} hover:underline`}>
                         {p.symbol}
                       </Link>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-right font-bold text-gray-900">{p.overallScore}</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-right text-gray-500">{p.technicalScore}</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-right text-gray-500">{p.fundamentalScore}</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-right text-gray-500">{p.valuationScore}</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-right text-gray-500">{p.qualityScore}</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-right text-gray-500">{p.pe ? p.pe.toFixed(1) : '-'}</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-right text-gray-500">{p.roe ? p.roe.toFixed(1) : '-'}</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-right text-gray-500">{p.debtToEquity ? p.debtToEquity.toFixed(2) : '-'}</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-right text-gray-500">{p.marketCap ? (p.marketCap / 10000000).toFixed(0) : '-'}</td>
+                    <td className="px-5 py-4 whitespace-nowrap text-right font-bold font-mono text-white">{p.overallScore}</td>
+                    <td className="px-5 py-4 whitespace-nowrap text-right text-sm text-slate-400 font-mono">{p.technicalScore}</td>
+                    <td className="px-5 py-4 whitespace-nowrap text-right text-sm text-slate-400 font-mono">{p.fundamentalScore}</td>
+                    <td className="px-5 py-4 whitespace-nowrap text-right text-sm text-slate-400 font-mono">{p.valuationScore}</td>
+                    <td className="px-5 py-4 whitespace-nowrap text-right text-sm text-slate-400 font-mono">{p.qualityScore}</td>
+                    <td className="px-5 py-4 whitespace-nowrap text-right text-sm text-slate-400 font-mono">{p.pe ? p.pe.toFixed(1) : '—'}</td>
+                    <td className="px-5 py-4 whitespace-nowrap text-right text-sm text-slate-400 font-mono">{p.roe ? p.roe.toFixed(1) : '—'}</td>
+                    <td className="px-5 py-4 whitespace-nowrap text-right text-sm text-slate-400 font-mono">{p.debtToEquity ? p.debtToEquity.toFixed(2) : '—'}</td>
+                    <td className="px-5 py-4 whitespace-nowrap text-right text-sm text-slate-400 font-mono">{p.marketCap ? (p.marketCap / 10000000).toFixed(0) : '—'}</td>
                   </tr>
                 ))}
               </tbody>
