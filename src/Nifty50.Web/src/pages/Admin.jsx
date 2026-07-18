@@ -104,7 +104,7 @@ export default function Admin() {
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-4 gap-4">
           <h4 className="text-sm font-semibold text-slate-300">📋 Recent API Calls</h4>
           <div className="flex flex-wrap gap-2">
-            {['', 'YahooFinance', 'YahooFundamentals', 'GNews'].map(f => (
+            {['', ...(health?.apiHealth?.map(a => a.apiName) || [])].map(f => (
               <button key={f} onClick={() => setFilter(f)}
                 className={`px-3 py-1 rounded-lg text-xs ${filter === f ? 'bg-blue-500 text-white' : 'bg-slate-800/50 text-slate-400 hover:bg-slate-700'}`}>
                 {f || 'All'}
