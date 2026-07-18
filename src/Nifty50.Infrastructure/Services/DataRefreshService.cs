@@ -68,11 +68,11 @@ public class DataRefreshService : BackgroundService, IDataRefreshService
 
         while (!stoppingToken.IsCancellationRequested)
         {
-            // On Render free tier, the instance spins down after ~15 min of inactivity.
-            // Every cold start re-runs this loop, so check if a recent refresh already exists
-            // to avoid burning Yahoo/GNews API quotas on every wake-up.
+            var now = DateTime.UtcNow;
+            var todayMidnightUtc = now.Date; // 00:00 UTC = 5:30 AM IST
+            
+            // Check if we already ran the refresh for today (since 5:30 AM IST)
             var skipRefresh = false;
-            var skipHours = _config.GetValue<double>("DataRefresh:SkipIfRecentHours", 12.0);
             if (!_isManualTrigger)
             {
                 try
@@ -80,12 +80,13 @@ public class DataRefreshService : BackgroundService, IDataRefreshService
                     using var checkScope = _services.CreateScope();
                     var checkDb = checkScope.ServiceProvider.GetRequiredService<Nifty50.Infrastructure.Data.AppDbContext>();
                     var lastRefresh = await checkDb.StockPrices.MaxAsync(p => (DateTime?)p.UpdatedAt, stoppingToken);
-                    if (lastRefresh.HasValue && DateTime.UtcNow - lastRefresh.Value < TimeSpan.FromHours(skipHours))
+                    
+                    if (lastRefresh.HasValue && lastRefresh.Value >= todayMidnightUtc)
                     {
                         skipRefresh = true;
                         _logger.LogInformation(
-                            "Skipping data refresh — last refresh was {Ago:F1} hours ago (threshold: {Threshold}h).",
-                            (DateTime.UtcNow - lastRefresh.Value).TotalHours, skipHours);
+                            "Skipping data refresh — already ran for today at {LastRefresh} UTC.",
+                            lastRefresh.Value);
                     }
                 }
                 catch (Exception ex)
@@ -113,12 +114,16 @@ public class DataRefreshService : BackgroundService, IDataRefreshService
                 }
             }
 
-            var intervalHours = _config.GetValue<double>("DataRefresh:IntervalHours", 24.0);
-            _logger.LogInformation("Next refresh scheduled in {Hours} hours.", intervalHours);
+            // Calculate delay until next 5:30 AM IST (00:00 UTC tomorrow)
+            now = DateTime.UtcNow;
+            var nextMidnightUtc = now.Date.AddDays(1);
+            var delay = nextMidnightUtc - now;
+
+            _logger.LogInformation("Next refresh scheduled in {Hours:F1} hours at {Time} UTC (5:30 AM IST).", delay.TotalHours, nextMidnightUtc);
             try 
             {
                 using var cts = CancellationTokenSource.CreateLinkedTokenSource(stoppingToken);
-                cts.CancelAfter(TimeSpan.FromHours(intervalHours));
+                cts.CancelAfter(delay);
                 await _manualTrigger.Reader.ReadAsync(cts.Token);
             }
             catch (OperationCanceledException) { }
