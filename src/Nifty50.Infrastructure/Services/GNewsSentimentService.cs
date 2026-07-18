@@ -34,27 +34,36 @@ public class GNewsSentimentService : ISentimentService
 
     public async Task<SentimentAnalysis> AnalyzeSentimentAsync(string companyName, string symbol)
     {
-        // Try GNews first if API key is configured
         var headlines = new List<string>();
         string source = "None";
         var cleanSymbol = symbol.Replace(".NS", "").Replace(".BO", "");
 
+        // 1. Try GNews first if API key is configured (already targeted, no filtering needed)
         if (!string.IsNullOrEmpty(_apiKey) && _apiKey != "YOUR_GNEWS_API_KEY")
         {
-            // Fetch from GNews (primary)
             headlines = await FetchGNewsHeadlinesAsync(companyName, symbol);
             source = "GNews";
         }
 
-        // Fall back to Yahoo Finance search if GNews returned nothing
+        // 2. Fall back to Google News RSS (free, no API key, stock-specific)
         if (headlines.Count == 0)
         {
-            headlines = await FetchYahooHeadlinesAsync(symbol);
+            headlines = await FetchGoogleNewsHeadlinesAsync(companyName, cleanSymbol);
+            source = headlines.Count > 0 ? "GoogleNews" : "None";
+        }
+
+        // 3. Fall back to Yahoo Finance search
+        if (headlines.Count == 0)
+        {
+            headlines = await FetchYahooHeadlinesAsync(companyName, cleanSymbol);
             source = headlines.Count > 0 ? "Yahoo" : "None";
         }
 
-        // Filter out irrelevant headlines that don't mention the company or symbol
-        headlines = FilterRelevantHeadlines(headlines, companyName, cleanSymbol);
+        // Filter out irrelevant headlines for non-GNews sources (GNews is already targeted)
+        if (source != "GNews" && headlines.Count > 0)
+        {
+            headlines = FilterRelevantHeadlines(headlines, companyName, cleanSymbol);
+        }
 
         _logger.LogInformation("Sentiment for {Symbol}: {Count} relevant headlines from {Source}", symbol, headlines.Count, source);
 
@@ -116,17 +125,54 @@ public class GNewsSentimentService : ISentimentService
         catch (Exception ex)
         {
             sw.Stop();
-            _logger.LogWarning(ex, "GNews failed for {Company}, will fall back to Yahoo", companyName);
+            _logger.LogWarning(ex, "GNews failed for {Company}, will fall back", companyName);
             _monitor.RecordApiCall(new ApiCallRecord("GNews", url.Replace(_apiKey!, "***"), DateTime.UtcNow, 500, sw.ElapsedMilliseconds, ex.Message));
             return new List<string>();
         }
     }
 
-    /// <summary>Fallback: fetches headlines from Yahoo Finance search endpoint using the ticker symbol</summary>
-    private async Task<List<string>> FetchYahooHeadlinesAsync(string symbol)
+    /// <summary>Fetches headlines from Google News RSS — free, no API key needed, returns targeted results</summary>
+    private async Task<List<string>> FetchGoogleNewsHeadlinesAsync(string companyName, string cleanSymbol)
     {
-        // Use the full .NS symbol for ticker-specific results from Yahoo
-        var url = $"https://query2.finance.yahoo.com/v1/finance/search?q={Uri.EscapeDataString(symbol)}&newsCount=10";
+        // Build a focused search query: "TCS stock" or "Reliance Industries stock"
+        var shortName = companyName.Split(new[] { " Ltd", " Limited" }, StringSplitOptions.None)[0].Trim();
+        var query = Uri.EscapeDataString($"{shortName} {cleanSymbol} stock NSE");
+        var url = $"https://news.google.com/rss/search?q={query}&hl=en-IN&gl=IN&ceid=IN:en";
+        var sw = System.Diagnostics.Stopwatch.StartNew();
+        try
+        {
+            var xml = await _http.GetStringAsync(url);
+            sw.Stop();
+            _monitor.RecordApiCall(new ApiCallRecord("GoogleNewsRSS", url, DateTime.UtcNow, 200, sw.ElapsedMilliseconds, null));
+
+            var headlines = new List<string>();
+            // Parse RSS XML — extract <title> elements from <item> entries
+            var doc = System.Xml.Linq.XDocument.Parse(xml);
+            var items = doc.Descendants("item");
+            foreach (var item in items.Take(10))
+            {
+                var title = item.Element("title")?.Value;
+                if (!string.IsNullOrWhiteSpace(title))
+                    headlines.Add(title);
+            }
+            return headlines;
+        }
+        catch (Exception ex)
+        {
+            sw.Stop();
+            _logger.LogWarning(ex, "Google News RSS failed for {Symbol}", cleanSymbol);
+            _monitor.RecordApiCall(new ApiCallRecord("GoogleNewsRSS", url, DateTime.UtcNow, 500, sw.ElapsedMilliseconds, ex.Message));
+            return new List<string>();
+        }
+    }
+
+    /// <summary>Fallback: fetches headlines from Yahoo Finance search using company name + symbol</summary>
+    private async Task<List<string>> FetchYahooHeadlinesAsync(string companyName, string cleanSymbol)
+    {
+        // Search by company name + symbol for better results than symbol alone
+        var shortName = companyName.Split(new[] { " Ltd", " Limited" }, StringSplitOptions.None)[0].Trim();
+        var query = Uri.EscapeDataString($"{shortName} {cleanSymbol}");
+        var url = $"https://query2.finance.yahoo.com/v1/finance/search?q={query}&newsCount=10";
         var sw = System.Diagnostics.Stopwatch.StartNew();
         try
         {
@@ -148,7 +194,7 @@ public class GNewsSentimentService : ISentimentService
         catch (Exception ex)
         {
             sw.Stop();
-            _logger.LogWarning(ex, "Yahoo news fallback also failed for {Symbol}", symbol);
+            _logger.LogWarning(ex, "Yahoo news fallback also failed for {Symbol}", cleanSymbol);
             _monitor.RecordApiCall(new ApiCallRecord("YahooNews", url, DateTime.UtcNow, 500, sw.ElapsedMilliseconds, ex.Message));
             return new List<string>();
         }
