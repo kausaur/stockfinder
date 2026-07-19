@@ -97,15 +97,12 @@ export default function Layout() {
               {navItems.find(n => n.path === location.pathname)?.label || 'Stock Detail'}
             </h2>
             <div className="flex items-center gap-2 md:gap-4 flex-shrink-0">
-              {lastRefresh && (
-                <span className="text-xs text-slate-500 hidden sm:inline-block">
-                  🔄 Data: <span className="text-slate-400">{formatRelative(lastRefresh)}</span>
+              {lastRefresh ? (
+                <span className="text-xs text-slate-500">
+                  🔄 {formatRelative(lastRefresh)} <span className="hidden md:inline">· {lastRefresh.toLocaleString('en-IN', { day: 'numeric', month: 'short', year: 'numeric', hour: 'numeric', minute: '2-digit', hour12: true })}</span>
                 </span>
-              )}
-              {lastRefresh && (
-                <span className="text-xs text-slate-500 hidden md:inline-block">
-                  Last Refresh: {lastRefresh.toLocaleString('en-IN', { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit', hour12: true })}
-                </span>
+              ) : (
+                <span className="text-xs text-slate-500">🔄 Loading...</span>
               )}
               <button onClick={handleRefresh} disabled={refreshing}
                 className="md:hidden bg-blue-600/20 text-blue-400 p-2 rounded-lg text-xs font-medium hover:bg-blue-600/30 flex items-center justify-center">
