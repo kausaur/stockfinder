@@ -102,7 +102,11 @@ export default function Layout() {
                   🔄 Data: <span className="text-slate-400">{formatRelative(lastRefresh)}</span>
                 </span>
               )}
-              <span className="text-xs text-slate-500 hidden md:inline-block">{new Date().toLocaleString('en-IN', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', hour: 'numeric', minute: '2-digit', hour12: true })}</span>
+              {lastRefresh && (
+                <span className="text-xs text-slate-500 hidden md:inline-block">
+                  Last Refresh: {lastRefresh.toLocaleString('en-IN', { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit', hour12: true })}
+                </span>
+              )}
               <button onClick={handleRefresh} disabled={refreshing}
                 className="md:hidden bg-blue-600/20 text-blue-400 p-2 rounded-lg text-xs font-medium hover:bg-blue-600/30 flex items-center justify-center">
                 {refreshing ? <span className="animate-spin">⟳</span> : '🔄'}
