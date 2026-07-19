@@ -271,7 +271,8 @@ public class StockRepository : IStockRepository
                 a.QualitySignal.HasValue ? a.QualitySignal.ToString() : null)).ToListAsync();
         var sectors = stocks.Where(s => s.Sector != null).GroupBy(s => s.Sector!)
             .Select(g => new SectorPerformanceDto(g.Key, g.Average(s => s.DayChangePercent ?? 0), g.Count())).ToList();
-        return new DashboardDto(topGainers, topLosers, alerts, sectors, stocks.Count, alerts.Count);
+        var dataAsOf = await _db.Stocks.MaxAsync(s => (DateTime?)s.LastRefreshed);
+        return new DashboardDto(topGainers, topLosers, alerts, sectors, stocks.Count, alerts.Count, dataAsOf);
     }
 
     public async Task SaveChangesAsync() => await _db.SaveChangesAsync();

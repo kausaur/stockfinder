@@ -66,7 +66,7 @@ public record ScoringProfileUpdateDto(
 
 public record DashboardDto(List<StockListDto> TopGainers, List<StockListDto> TopLosers,
     List<AnalysisDto> LatestAlerts, List<SectorPerformanceDto> SectorPerformance,
-    int TotalStocks, int AlertCount);
+    int TotalStocks, int AlertCount, DateTime? DataAsOf);
 
 public record SectorPerformanceDto(string Sector, decimal AverageChangePercent, int StockCount);
 

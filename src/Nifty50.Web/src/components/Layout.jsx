@@ -1,5 +1,5 @@
 import { Outlet, NavLink, useLocation } from 'react-router-dom';
-import { getAdminHealth } from '../services/api';
+import { getDashboard } from '../services/api';
 import { useState, useEffect } from 'react';
 
 const navItems = [
@@ -14,13 +14,17 @@ const navItems = [
 
 export default function Layout() {
   const [lastRefresh, setLastRefresh] = useState(null);
+  const [healthLoaded, setHealthLoaded] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
   const location = useLocation();
 
   useEffect(() => {
-    getAdminHealth()
-      .then(r => setLastRefresh(r.data?.lastRefreshAt ? new Date(r.data.lastRefreshAt) : null))
-      .catch(() => {});
+    getDashboard()
+      .then(r => {
+        setLastRefresh(r.data?.dataAsOf ? new Date(r.data.dataAsOf) : null);
+        setHealthLoaded(true);
+      })
+      .catch(() => setHealthLoaded(true));
   }, []);
 
   const formatRelative = (date) => {
@@ -105,12 +109,14 @@ export default function Layout() {
               {navItems.find(n => n.path === location.pathname)?.label || 'Stock Detail'}
             </h2>
             <div className="flex items-center gap-2 md:gap-4 flex-shrink-0">
-              {lastRefresh ? (
+              {!healthLoaded ? (
+                <span className="text-xs text-slate-600">🔄 Loading...</span>
+              ) : lastRefresh ? (
                 <span className="text-xs text-slate-500">
                   🔄 {formatRelative(lastRefresh)} <span className="hidden md:inline">· {lastRefresh.toLocaleString('en-IN', { day: 'numeric', month: 'short', year: 'numeric', hour: 'numeric', minute: '2-digit', hour12: true })}</span>
                 </span>
               ) : (
-                <span className="text-xs text-slate-500">🔄 Loading...</span>
+                <span className="text-xs text-slate-600">🔄 Not yet refreshed</span>
               )}
             </div>
           </div>
