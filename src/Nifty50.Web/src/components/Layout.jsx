@@ -14,6 +14,7 @@ const navItems = [
 
 export default function Layout() {
   const [lastRefresh, setLastRefresh] = useState(null);
+  const [collapsed, setCollapsed] = useState(false);
   const location = useLocation();
 
   useEffect(() => {
@@ -32,25 +33,49 @@ export default function Layout() {
     return `${Math.round(hrs / 24)}d ago`;
   };
 
+  const sidebarW = collapsed ? 'w-16' : 'w-64';
+  const mainML = collapsed ? 'md:ml-16' : 'md:ml-64';
+
   return (
     <div className="min-h-screen bg-[#0f172a] flex flex-col md:flex-row pb-16 md:pb-0">
       {/* Desktop Sidebar */}
-      <aside className="hidden md:flex w-64 bg-[#1e293b]/80 backdrop-blur-xl border-r border-slate-700/50 flex-col fixed h-full z-10">
-        <div className="p-6 border-b border-slate-700/50">
-          <h1 className="text-xl font-bold bg-gradient-to-r from-blue-400 to-emerald-400 bg-clip-text text-transparent">
-            📈 Nifty50 Analyzer
-          </h1>
-          <p className="text-xs text-slate-500 mt-1">Stock Intelligence Platform</p>
+      <aside className={`hidden md:flex ${sidebarW} bg-[#1e293b]/80 backdrop-blur-xl border-r border-slate-700/50 flex-col fixed h-full z-10 transition-all duration-300`}>
+        {/* Logo / Header */}
+        <div className={`flex items-center border-b border-slate-700/50 h-[69px] ${collapsed ? 'justify-center px-2' : 'justify-between px-6'}`}>
+          {!collapsed && (
+            <div>
+              <h1 className="text-xl font-bold bg-gradient-to-r from-blue-400 to-emerald-400 bg-clip-text text-transparent">
+                📈 Nifty50
+              </h1>
+              <p className="text-xs text-slate-500">Stock Intelligence</p>
+            </div>
+          )}
+          {collapsed && <span className="text-2xl">📈</span>}
+          <button
+            onClick={() => setCollapsed(c => !c)}
+            title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+            className={`text-slate-400 hover:text-slate-200 hover:bg-slate-700/50 rounded-lg p-1.5 transition-colors ${collapsed ? 'mt-0' : ''}`}
+          >
+            {collapsed ? '»' : '«'}
+          </button>
         </div>
-        <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
+
+        {/* Nav Links */}
+        <nav className="flex-1 p-2 space-y-1 overflow-y-auto">
           {navItems.map(item => (
             <NavLink key={item.path} to={item.path}
+              title={collapsed ? item.label : undefined}
               className={({ isActive }) =>
-                `flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200 ${
-                  isActive ? 'bg-blue-500/20 text-blue-400 shadow-lg shadow-blue-500/10' : 'text-slate-400 hover:text-slate-200 hover:bg-slate-700/50'
+                `flex items-center rounded-xl text-sm font-medium transition-all duration-200 ${
+                  collapsed ? 'justify-center px-2 py-3' : 'gap-3 px-4 py-3'
+                } ${
+                  isActive
+                    ? 'bg-blue-500/20 text-blue-400 shadow-lg shadow-blue-500/10'
+                    : 'text-slate-400 hover:text-slate-200 hover:bg-slate-700/50'
                 }`
               }>
-              <span className="text-lg">{item.icon}</span>{item.label}
+              <span className="text-lg flex-shrink-0">{item.icon}</span>
+              {!collapsed && <span>{item.label}</span>}
             </NavLink>
           ))}
         </nav>
@@ -72,7 +97,7 @@ export default function Layout() {
       </nav>
 
       {/* Main content */}
-      <main className="flex-1 md:ml-64 w-full">
+      <main className={`flex-1 ${mainML} w-full transition-all duration-300`}>
         <header className="sticky top-0 z-20 bg-[#0f172a]/80 backdrop-blur-xl border-b border-slate-700/50 px-4 md:px-8 py-4">
           <div className="flex items-center justify-between">
             <h2 className="text-lg font-semibold text-slate-200 truncate pr-2">
