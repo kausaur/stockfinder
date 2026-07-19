@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import { Loader2 } from 'lucide-react';
 import { screenStocks } from '../services/api';
 
 const Screener = () => {
@@ -123,7 +124,7 @@ const Screener = () => {
         </div>
         
         {loading && results.length === 0 ? (
-          <div className="flex items-center justify-center h-32"><div className="animate-spin text-3xl">⟳</div></div>
+          <div className="flex items-center justify-center h-32"><Loader2 className="animate-spin text-slate-400" size={48} /></div>
         ) : results.length > 0 ? (
           <div className="overflow-x-auto">
             <table className="min-w-full">

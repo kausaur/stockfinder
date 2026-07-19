@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { getAlerts } from '../services/api';
 import { useNavigate } from 'react-router-dom';
+import { Bell, Loader2 } from 'lucide-react';
 
 export default function Alerts() {
   const [alerts, setAlerts] = useState([]);
@@ -15,7 +16,7 @@ export default function Alerts() {
     <div className="space-y-4">
       <div className="glass-card p-5 border-amber-500/20 bg-amber-500/5">
         <div className="flex items-center gap-3">
-          <span className="text-2xl">🚨</span>
+          <Bell className="text-amber-400" size={24} />
           <h3 className="text-lg font-bold text-amber-400">Bullish Signal Alerts ({alerts.length})</h3>
         </div>
         <p className="text-sm text-slate-400 mt-1">Stocks meeting all alert thresholds based on your active scoring profile.</p>
@@ -29,7 +30,7 @@ export default function Alerts() {
             ))}
           </tr></thead>
           <tbody>
-            {loading ? <tr><td colSpan={8} className="text-center py-12 text-slate-500">Loading...</td></tr>
+            {loading ? <tr><td colSpan={8} className="text-center py-12 text-slate-500"><Loader2 className="animate-spin inline mr-2" size={20} />Loading...</td></tr>
             : alerts.length === 0 ? <tr><td colSpan={8} className="text-center py-12 text-slate-500">No alerts currently. Adjust thresholds in Settings.</td></tr>
             : alerts.map((a, i) => (
               <tr key={i} onClick={() => navigate(`/stocks/${a.stockId}`)} className="border-b border-slate-800/50 hover:bg-slate-700/30 cursor-pointer transition-colors">

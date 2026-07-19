@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { getDashboard, getAlerts } from '../services/api';
 import { useNavigate } from 'react-router-dom';
+import { Bell, Loader2, LayoutDashboard, TrendingUp, TrendingDown, PieChart } from 'lucide-react';
 
 const SignalBadge = ({ signal }) => {
   const cls = `signal-${(signal || 'hold').toLowerCase().replace(/\s/g, '')}`;
@@ -25,7 +26,7 @@ export default function Dashboard() {
     return acc;
   }, {});
 
-  if (loading) return <div className="flex items-center justify-center h-64"><div className="animate-spin text-4xl">⟳</div></div>;
+  if (loading) return <div className="flex items-center justify-center h-64"><Loader2 className="animate-spin text-slate-400" size={48} /></div>;
   if (!data) return <p className="text-slate-400">No data available. Try refreshing.</p>;
 
   return (
@@ -34,7 +35,7 @@ export default function Dashboard() {
       {alerts.length > 0 && (
         <div className="glass-card animate-pulse-glow p-5 border-amber-500/30 bg-amber-500/5">
           <div className="flex items-center gap-3">
-            <span className="text-2xl">🚨</span>
+            <Bell className="text-amber-400" size={24} />
             <div>
               <h3 className="font-bold text-amber-400">
                 {alerts.length} Active Signal{alerts.length > 1 ? 's' : ''}
@@ -54,13 +55,13 @@ export default function Dashboard() {
       {/* Stats */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {[
-          { label: 'Total Stocks', value: data.totalStocks, icon: '📊', color: 'blue' },
-          { label: 'Active Alerts', value: data.alertCount, icon: '🚨', color: 'amber' },
-          { label: 'Top Gainer', value: data.topGainers?.[0]?.symbol || '-', sub: data.topGainers?.[0]?.dayChangePercent ? `+${data.topGainers[0].dayChangePercent.toFixed(2)}%` : '', icon: '🟢', color: 'green' },
-          { label: 'Top Loser', value: data.topLosers?.[0]?.symbol || '-', sub: data.topLosers?.[0]?.dayChangePercent ? `${data.topLosers[0].dayChangePercent.toFixed(2)}%` : '', icon: '🔴', color: 'red' },
+          { label: 'Total Stocks', value: data.totalStocks, icon: <LayoutDashboard className="text-blue-400" size={24} />, color: 'blue' },
+          { label: 'Active Alerts', value: data.alertCount, icon: <Bell className="text-amber-400" size={24} />, color: 'amber' },
+          { label: 'Top Gainer', value: data.topGainers?.[0]?.symbol || '-', sub: data.topGainers?.[0]?.dayChangePercent ? `+${data.topGainers[0].dayChangePercent.toFixed(2)}%` : '', icon: <TrendingUp className="text-emerald-400" size={24} />, color: 'green' },
+          { label: 'Top Loser', value: data.topLosers?.[0]?.symbol || '-', sub: data.topLosers?.[0]?.dayChangePercent ? `${data.topLosers[0].dayChangePercent.toFixed(2)}%` : '', icon: <TrendingDown className="text-red-400" size={24} />, color: 'red' },
         ].map((s, i) => (
           <div key={i} className="glass-card p-5">
-            <div className="flex items-center gap-3 mb-2"><span className="text-xl">{s.icon}</span><span className="text-xs text-slate-500 uppercase tracking-wide">{s.label}</span></div>
+            <div className="flex items-center gap-3 mb-2"><span>{s.icon}</span><span className="text-xs text-slate-500 uppercase tracking-wide">{s.label}</span></div>
             <div className="text-2xl font-bold text-white">{s.value}</div>
             {s.sub && <div className={`text-sm ${s.color === 'green' ? 'text-emerald-400' : 'text-red-400'}`}>{s.sub}</div>}
           </div>
@@ -69,8 +70,9 @@ export default function Dashboard() {
 
       {/* Gainers & Losers */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {[{ title: '🟢 Top Gainers', items: data.topGainers, isGain: true }, { title: '🔴 Top Losers', items: data.topLosers, isGain: false }].map(({ title, items, isGain }) => (
-          <div key={title} className="glass-card p-5">
+        {[{ title: <span className="flex items-center"><TrendingUp className="mr-2 text-emerald-400" size={18} /> Top Gainers</span>, items: data.topGainers, isGain: true }, 
+          { title: <span className="flex items-center"><TrendingDown className="mr-2 text-red-400" size={18} /> Top Losers</span>, items: data.topLosers, isGain: false }].map(({ title, items, isGain }, idx) => (
+          <div key={idx} className="glass-card p-5">
             <h3 className="text-sm font-semibold text-slate-300 mb-4">{title}</h3>
             <div className="space-y-3">
               {(items || []).map((s, i) => (
@@ -90,7 +92,7 @@ export default function Dashboard() {
       {/* Sector Performance */}
       {data.sectorPerformance?.length > 0 && (
         <div className="glass-card p-5">
-          <h3 className="text-sm font-semibold text-slate-300 mb-4">📈 Sector Performance</h3>
+          <h3 className="text-sm font-semibold text-slate-300 mb-4 flex items-center"><PieChart className="mr-2 text-blue-400" size={18} /> Sector Performance</h3>
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
             {data.sectorPerformance.map((s, i) => (
               <div key={i} className={`p-3 rounded-lg text-center ${s.averageChangePercent >= 0 ? 'bg-emerald-500/10 border border-emerald-500/20' : 'bg-red-500/10 border border-red-500/20'}`}>

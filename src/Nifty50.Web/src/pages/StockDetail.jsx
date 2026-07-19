@@ -3,6 +3,10 @@ import { useParams } from 'react-router-dom';
 import { getStock, getStockPrices, getTechnicals, getFundamentals, getSentiment, getAnalysis, getDividends, getActiveProfile } from '../services/api';
 import { createChart, CandlestickSeries, HistogramSeries } from 'lightweight-charts';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, LineChart, Line, PieChart, Pie, Cell } from 'recharts';
+import { 
+  Loader2, LineChart as LineChartIcon, BarChart2, Newspaper, 
+  Smile, Frown, Meh, CheckCircle2, XCircle, Minus 
+} from 'lucide-react';
 
 const SignalBadge = ({ signal, large }) => {
   const cls = `signal-${(signal || 'hold').toLowerCase().replace(/\s/g, '')}`;
@@ -91,7 +95,7 @@ export default function StockDetail() {
     return () => { window.removeEventListener('resize', handleResize); chart.remove(); chartInstance.current = null; };
   }, [id, range, loading]);
 
-  if (loading) return <div className="flex items-center justify-center h-64"><div className="animate-spin text-4xl">⟳</div></div>;
+  if (loading) return <div className="flex items-center justify-center h-64"><Loader2 className="animate-spin text-slate-400" size={48} /></div>;
   if (!stock) return <p className="text-slate-400">Stock not found.</p>;
 
   const headlines = sentiment?.topHeadlines || [];
@@ -155,7 +159,7 @@ export default function StockDetail() {
         {/* Technical Panel */}
         <div className="glass-card p-5">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-sm font-semibold text-slate-300">📉 Technical Indicators</h3>
+            <h3 className="text-sm font-semibold text-slate-300 flex items-center"><LineChartIcon className="mr-2 text-slate-400" size={18} /> Technical Indicators</h3>
             {technicals?.date && <span className="text-xs text-slate-500">as of {new Date(technicals.date).toLocaleString('en-IN', { day: 'numeric', month: 'short', year: 'numeric', hour: 'numeric', minute: '2-digit', hour12: true })}</span>}
           </div>
           {technicals ? (
@@ -180,7 +184,7 @@ export default function StockDetail() {
         {/* Fundamental Panel */}
         <div className="glass-card p-5">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-sm font-semibold text-slate-300">📊 Fundamental Ratios</h3>
+            <h3 className="text-sm font-semibold text-slate-300 flex items-center"><BarChart2 className="mr-2 text-slate-400" size={18} /> Fundamental Ratios</h3>
             {fundamentals?.computedAt && <span className="text-xs text-slate-500">as of {new Date(fundamentals.computedAt).toLocaleString('en-IN', { day: 'numeric', month: 'short', year: 'numeric', hour: 'numeric', minute: '2-digit', hour12: true })}</span>}
           </div>
           {fundamentals ? (
@@ -206,20 +210,20 @@ export default function StockDetail() {
       {/* Sentiment Panel */}
       <div className="glass-card p-5">
         <div className="flex items-center justify-between mb-4">
-          <h3 className="text-sm font-semibold text-slate-300">🗞️ Sentiment Analysis</h3>
+          <h3 className="text-sm font-semibold text-slate-300 flex items-center"><Newspaper className="mr-2 text-slate-400" size={18} /> Sentiment Analysis</h3>
           {sentiment?.analyzedAt && <span className="text-xs text-slate-500">as of {new Date(sentiment.analyzedAt).toLocaleString('en-IN', { day: 'numeric', month: 'short', year: 'numeric', hour: 'numeric', minute: '2-digit', hour12: true })}</span>}
         </div>
         {sentiment ? (
           <div>
             <div className="flex flex-col md:flex-row items-start md:items-center gap-4 md:gap-6 mb-4">
-              <div className={`text-2xl md:text-3xl font-bold ${(sentiment.sentimentScore || 0) > 0.1 ? 'text-emerald-400' : (sentiment.sentimentScore || 0) < -0.1 ? 'text-red-400' : 'text-slate-400'}`}>
-                {(sentiment.sentimentScore || 0) > 0.1 ? '😊' : (sentiment.sentimentScore || 0) < -0.1 ? '😟' : '😐'} {sentiment.overallSentiment}
+              <div className={`text-2xl md:text-3xl font-bold flex items-center gap-2 ${(sentiment.sentimentScore || 0) > 0.1 ? 'text-emerald-400' : (sentiment.sentimentScore || 0) < -0.1 ? 'text-red-400' : 'text-slate-400'}`}>
+                {(sentiment.sentimentScore || 0) > 0.1 ? <Smile size={32} /> : (sentiment.sentimentScore || 0) < -0.1 ? <Frown size={32} /> : <Meh size={32} />} {sentiment.overallSentiment}
               </div>
               <div className="text-sm text-slate-400">Score: <span className="font-mono font-bold text-white">{sentiment.sentimentScore?.toFixed(2) || 'N/A'}</span></div>
               <div className="flex flex-wrap gap-3 text-xs">
-                <span className="text-emerald-400">✅ {sentiment.positiveCount} positive</span>
-                <span className="text-red-400">❌ {sentiment.negativeCount} negative</span>
-                <span className="text-slate-500">• {sentiment.neutralCount} neutral</span>
+                <span className="text-emerald-400 flex items-center"><CheckCircle2 size={14} className="mr-1" /> {sentiment.positiveCount} positive</span>
+                <span className="text-red-400 flex items-center"><XCircle size={14} className="mr-1" /> {sentiment.negativeCount} negative</span>
+                <span className="text-slate-500 flex items-center"><Minus size={14} className="mr-1" /> {sentiment.neutralCount} neutral</span>
               </div>
             </div>
             <div className="space-y-2">

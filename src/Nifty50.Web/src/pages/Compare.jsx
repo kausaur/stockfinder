@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { getPeers, getStock } from '../services/api';
+import { Loader2 } from 'lucide-react';
 
 const Compare = () => {
   const { id } = useParams();
@@ -37,7 +38,7 @@ const Compare = () => {
     }
   };
 
-  if (loading) return <div className="flex items-center justify-center h-64"><div className="animate-spin text-4xl">⟳</div></div>;
+  if (loading) return <div className="flex items-center justify-center h-64"><Loader2 className="animate-spin text-slate-400" size={48} /></div>;
   if (error) return <div className="p-8 text-center text-red-400">{error}</div>;
   if (!stock) return <div className="p-8 text-center text-red-400">Stock not found.</div>;
 

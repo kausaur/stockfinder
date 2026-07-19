@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { getAdminHealth, getAdminApiCalls, refreshData } from '../services/api';
+import { Wrench, RefreshCw, CheckCircle, XCircle, List, Loader2 } from 'lucide-react';
 
 export default function Admin() {
   const [health, setHealth] = useState(null);
@@ -29,13 +30,13 @@ export default function Admin() {
 
   useEffect(() => { load(); const interval = setInterval(load, 30000); return () => clearInterval(interval); }, [filter]);
 
-  if (loading) return <div className="flex items-center justify-center h-64"><div className="animate-spin text-4xl">⟳</div></div>;
+  if (loading) return <div className="flex items-center justify-center h-64"><Loader2 className="animate-spin text-slate-400" size={48} /></div>;
 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <span className="text-2xl">🔧</span>
+          <Wrench className="text-blue-400" size={24} />
           <h3 className="text-lg font-bold text-white">API Monitor</h3>
           <span className="text-xs text-slate-500">Auto-refreshes every 30s</span>
         </div>
@@ -44,14 +45,14 @@ export default function Admin() {
           disabled={refreshing}
           className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white font-semibold px-4 py-2 rounded-lg transition-colors text-sm"
         >
-          {refreshing ? <span className="animate-spin">⟳</span> : '🔄'}
+          <RefreshCw className={refreshing ? "animate-spin" : ""} size={16} />
           {refreshing ? 'Queuing...' : 'Trigger Data Refresh'}
         </button>
       </div>
 
       {refreshStatus && (
         <div className={`p-3 rounded-lg text-sm ${refreshStatus.ok ? 'bg-emerald-500/10 border border-emerald-500/20 text-emerald-400' : 'bg-red-500/10 border border-red-500/20 text-red-400'}`}>
-          {refreshStatus.ok ? '✅' : '❌'} {refreshStatus.msg}
+          {refreshStatus.ok ? <CheckCircle size={16} className="inline mr-1" /> : <XCircle size={16} className="inline mr-1" />} {refreshStatus.msg}
         </div>
       )}
 
@@ -102,7 +103,7 @@ export default function Admin() {
       {/* Recent API Calls */}
       <div className="glass-card p-5">
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-4 gap-4">
-          <h4 className="text-sm font-semibold text-slate-300">📋 Recent API Calls</h4>
+          <h4 className="text-sm font-semibold text-slate-300 flex items-center"><List size={16} className="mr-2" /> Recent API Calls</h4>
           <div className="flex flex-wrap gap-2">
             {['', ...(health?.apiHealth?.map(a => a.apiName) || [])].map(f => (
               <button key={f} onClick={() => setFilter(f)}

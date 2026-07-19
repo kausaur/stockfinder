@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { getStocks } from '../services/api';
 import { useNavigate } from 'react-router-dom';
+import { ArrowUp, ArrowDown, ArrowUpDown, Search, Loader2 } from 'lucide-react';
 
 const SignalBadge = ({ signal }) => {
   const cls = `signal-${(signal || 'hold').toLowerCase().replace(/\s/g, '')}`;
@@ -16,8 +17,8 @@ const SORT_KEYS = {
 };
 
 const SortIcon = ({ active, dir }) => (
-  <span className={`ml-1 text-xs ${active ? 'text-blue-400' : 'text-slate-600'}`}>
-    {active ? (dir === 'asc' ? '↑' : '↓') : '↕'}
+  <span className={`ml-1 text-xs inline-flex items-center ${active ? 'text-blue-400' : 'text-slate-600'}`}>
+    {active ? (dir === 'asc' ? <ArrowUp size={14} /> : <ArrowDown size={14} />) : <ArrowUpDown size={14} />}
   </span>
 );
 
@@ -62,9 +63,12 @@ export default function StockList() {
   return (
     <div className="space-y-4">
       <div className="flex items-center gap-3 flex-wrap">
-        <input type="text" placeholder="🔍 Search by symbol or company..." value={search}
-          onChange={e => setSearch(e.target.value)}
-          className="flex-1 min-w-[200px] bg-slate-800/50 border border-slate-700/50 rounded-xl px-4 py-3 text-sm text-slate-200 placeholder-slate-500 focus:outline-none focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/20" />
+        <div className="relative flex-1 min-w-[200px]">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" size={18} />
+          <input type="text" placeholder="Search by symbol or company..." value={search}
+            onChange={e => setSearch(e.target.value)}
+            className="w-full bg-slate-800/50 border border-slate-700/50 rounded-xl pl-10 pr-4 py-3 text-sm text-slate-200 placeholder-slate-500 focus:outline-none focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/20" />
+        </div>
         <select value={sector} onChange={e => setSector(e.target.value)}
           className="bg-slate-800/50 border border-slate-700/50 rounded-xl px-4 py-3 text-sm text-slate-200 focus:outline-none focus:border-blue-500/50">
           {sectors.map(s => <option key={s} value={s}>{s || 'All Sectors'}</option>)}
@@ -88,7 +92,7 @@ export default function StockList() {
           </thead>
           <tbody>
             {loading ? (
-              <tr><td colSpan={8} className="text-center py-12 text-slate-500">Loading...</td></tr>
+              <tr><td colSpan={8} className="text-center py-12 text-slate-500"><Loader2 className="animate-spin inline mr-2" size={20} />Loading...</td></tr>
             ) : filtered.length === 0 ? (
               <tr><td colSpan={8} className="text-center py-12 text-slate-500">No stocks match your filter.</td></tr>
             ) : filtered.map(s => (

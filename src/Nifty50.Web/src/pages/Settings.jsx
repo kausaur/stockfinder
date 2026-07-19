@@ -1,8 +1,19 @@
 import { useState, useEffect } from 'react';
 import { getScoringProfiles, getActiveProfile, updateActiveProfile, activateProfile, resetProfile, recalculateAnalyses } from '../services/api';
 import { PieChart, Pie, Cell, ResponsiveContainer } from 'recharts';
+import { 
+  Loader2, ClipboardList, SlidersHorizontal, LineChart, BarChart2, Newspaper, 
+  Banknote, Bell, Save, RefreshCw, TrendingUp, Rocket, Diamond, Zap, Trophy, LayoutDashboard
+} from 'lucide-react';
 
-const presetEmoji = { Balanced: '🟢', Growth: '🚀', Value: '💎', Income: '💰', Momentum: '⚡', Quality: '🏆' };
+const presetEmoji = { 
+  Balanced: <TrendingUp size={32} className="mx-auto text-emerald-400" />, 
+  Growth: <Rocket size={32} className="mx-auto text-purple-400" />, 
+  Value: <Diamond size={32} className="mx-auto text-blue-400" />, 
+  Income: <Banknote size={32} className="mx-auto text-amber-400" />, 
+  Momentum: <Zap size={32} className="mx-auto text-yellow-400" />, 
+  Quality: <Trophy size={32} className="mx-auto text-pink-400" /> 
+};
 const COLORS = ['#3b82f6', '#8b5cf6', '#f59e0b', '#ec4899'];
 
 export default function Settings() {
@@ -70,19 +81,19 @@ export default function Settings() {
     <div className="space-y-6">
       {recalculating && (
         <div className="glass-card p-4 bg-blue-500/10 border-blue-500/30 flex items-center gap-3">
-          <span className="animate-spin text-xl">⟳</span>
+          <Loader2 className="animate-spin text-blue-400" size={24} />
           <span className="text-blue-400 text-sm font-medium">Recalculating all analyses with new weights...</span>
         </div>
       )}
 
       {/* Presets */}
       <div>
-        <h3 className="text-sm font-semibold text-slate-300 mb-3">📋 Scoring Presets</h3>
+        <h3 className="text-sm font-semibold text-slate-300 mb-3 flex items-center"><ClipboardList className="mr-2" size={18} /> Scoring Presets</h3>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {profiles.filter(p => p.isPreset).map(p => (
             <div key={p.id} onClick={() => handlePresetSelect(p)}
               className={`glass-card p-5 cursor-pointer text-center transition-all ${(selectedPresetId === p.id || (!selectedPresetId && p.isDefault)) ? 'ring-2 ring-blue-500 bg-blue-500/10' : 'hover:bg-slate-700/30'}`}>
-              <div className="text-3xl mb-2">{presetEmoji[p.name] || '📊'}</div>
+              <div className="mb-2">{presetEmoji[p.name] || <LayoutDashboard size={32} className="mx-auto text-slate-400" />}</div>
               <div className="font-semibold text-white text-sm">{p.name}</div>
               {p.isDefault && <span className="text-xs text-blue-400 mt-1 block">Active</span>}
               {selectedPresetId === p.id && !p.isDefault && <span className="text-xs text-amber-400 mt-1 block">Selected (Pending Save)</span>}
@@ -103,14 +114,14 @@ export default function Settings() {
 
       {/* Custom Weights */}
       <div className="glass-card p-6">
-        <h3 className="text-sm font-semibold text-slate-300 mb-4">🎛️ Custom Weight Sliders</h3>
+        <h3 className="text-sm font-semibold text-slate-300 mb-4 flex items-center"><SlidersHorizontal className="mr-2" size={18} /> Custom Weight Sliders</h3>
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           <div className="space-y-5">
             {[
-              { key: 'technicalWeight', label: 'Technical', color: '#3b82f6', icon: '📉' },
-              { key: 'fundamentalWeight', label: 'Fundamental', color: '#8b5cf6', icon: '📊' },
-              { key: 'sentimentWeight', label: 'Sentiment', color: '#f59e0b', icon: '🗞️' },
-              { key: 'dividendWeight', label: 'Dividend', color: '#ec4899', icon: '💰' },
+              { key: 'technicalWeight', label: 'Technical', color: '#3b82f6', icon: <LineChart size={16} className="inline mr-1" /> },
+              { key: 'fundamentalWeight', label: 'Fundamental', color: '#8b5cf6', icon: <BarChart2 size={16} className="inline mr-1" /> },
+              { key: 'sentimentWeight', label: 'Sentiment', color: '#f59e0b', icon: <Newspaper size={16} className="inline mr-1" /> },
+              { key: 'dividendWeight', label: 'Dividend', color: '#ec4899', icon: <Banknote size={16} className="inline mr-1" /> },
             ].map(({ key, label, color, icon }) => (
               <div key={key}>
                 <div className="flex justify-between mb-1">
@@ -156,7 +167,7 @@ export default function Settings() {
 
         {/* Alert Thresholds */}
         <div className="mt-6 pt-6 border-t border-slate-700/50">
-          <h4 className="text-sm font-semibold text-slate-300 mb-3">🚨 Alert Thresholds</h4>
+          <h4 className="text-sm font-semibold text-slate-300 mb-3 flex items-center"><Bell className="mr-2 text-amber-500" size={18} /> Alert Thresholds</h4>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             {[
               { key: 'alertMinOverallScore', label: 'Min Overall' },
@@ -177,11 +188,11 @@ export default function Settings() {
         </div>
 
         <div className="flex flex-col sm:flex-row gap-3 mt-6">
-          <button onClick={handleSave} disabled={saving} className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-blue-600 to-blue-500 text-white text-sm font-medium hover:from-blue-500 hover:to-blue-400 transition-all disabled:opacity-50">
-            {saving ? 'Saving...' : '💾 Save & Apply'}
+          <button onClick={handleSave} disabled={saving} className="flex items-center justify-center px-6 py-2.5 rounded-xl bg-gradient-to-r from-blue-600 to-blue-500 text-white text-sm font-medium hover:from-blue-500 hover:to-blue-400 transition-all disabled:opacity-50">
+            {saving ? 'Saving...' : <><Save className="mr-2" size={18} /> Save & Apply</>}
           </button>
-          <button onClick={handleReset} className="px-6 py-2.5 rounded-xl bg-slate-700 text-slate-300 text-sm font-medium hover:bg-slate-600 transition-all">
-            🔄 Reset to Defaults
+          <button onClick={handleReset} className="flex items-center justify-center px-6 py-2.5 rounded-xl bg-slate-700 text-slate-300 text-sm font-medium hover:bg-slate-600 transition-all">
+            <RefreshCw className="mr-2" size={18} /> Reset to Defaults
           </button>
         </div>
       </div>

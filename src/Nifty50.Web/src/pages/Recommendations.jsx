@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { getRecommendationsDashboard } from '../services/api';
+import { Loader2, LayoutGrid } from 'lucide-react';
 
 const Recommendations = () => {
   const [data, setData] = useState(null);
@@ -36,7 +37,7 @@ const Recommendations = () => {
     </div>
   );
 
-  if (loading) return <div className="flex items-center justify-center h-64"><div className="animate-spin text-4xl">⟳</div></div>;
+  if (loading) return <div className="flex items-center justify-center h-64"><Loader2 className="animate-spin text-slate-400" size={48} /></div>;
   if (!data) return <div className="p-8 text-center text-red-400">Failed to load recommendations.</div>;
 
   return (
@@ -90,7 +91,7 @@ const Recommendations = () => {
       </div>
 
       <div className="glass-card p-5">
-        <h2 className="text-sm font-semibold text-slate-300 mb-4">📊 Sector Heatmap</h2>
+        <h2 className="text-sm font-semibold text-slate-300 mb-4 flex items-center"><LayoutGrid className="mr-2 text-slate-400" size={18} /> Sector Heatmap</h2>
         <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-3">
           {data.sectorAverages && data.sectorAverages.map(sector => (
             <div key={sector.sector} className={`p-4 rounded-lg text-center ${sector.averageChangePercent > 0 ? 'bg-emerald-500/10 border border-emerald-500/20' : sector.averageChangePercent < 0 ? 'bg-red-500/10 border border-red-500/20' : 'bg-slate-800/50 border border-slate-700/50'}`}>
