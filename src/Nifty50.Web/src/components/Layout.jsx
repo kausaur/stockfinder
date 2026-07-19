@@ -1,5 +1,5 @@
 import { Outlet, NavLink, useLocation } from 'react-router-dom';
-import { refreshData, getAdminHealth } from '../services/api';
+import { getAdminHealth } from '../services/api';
 import { useState, useEffect } from 'react';
 
 const navItems = [
@@ -13,7 +13,6 @@ const navItems = [
 ];
 
 export default function Layout() {
-  const [refreshing, setRefreshing] = useState(false);
   const [lastRefresh, setLastRefresh] = useState(null);
   const location = useLocation();
 
@@ -31,16 +30,6 @@ export default function Layout() {
     const hrs = Math.round(mins / 60);
     if (hrs < 24) return `${hrs}h ago`;
     return `${Math.round(hrs / 24)}d ago`;
-  };
-
-  const handleRefresh = async () => {
-    setRefreshing(true);
-    try { 
-      await refreshData(); 
-      const r = await getAdminHealth();
-      setLastRefresh(r.data?.lastRefreshAt ? new Date(r.data.lastRefreshAt) : null);
-    } catch (e) { console.error(e); }
-    finally { setRefreshing(false); }
   };
 
   return (
@@ -65,12 +54,6 @@ export default function Layout() {
             </NavLink>
           ))}
         </nav>
-        <div className="p-4 border-t border-slate-700/50">
-          <button onClick={handleRefresh} disabled={refreshing}
-            className="w-full py-2.5 rounded-xl bg-gradient-to-r from-blue-600 to-blue-500 text-white text-sm font-medium hover:from-blue-500 hover:to-blue-400 transition-all disabled:opacity-50 flex items-center justify-center gap-2">
-            {refreshing ? <span className="animate-spin">⟳</span> : '🔄'} {refreshing ? 'Refreshing...' : 'Refresh Data'}
-          </button>
-        </div>
       </aside>
 
       {/* Mobile Bottom Navigation */}
@@ -104,10 +87,6 @@ export default function Layout() {
               ) : (
                 <span className="text-xs text-slate-500">🔄 Loading...</span>
               )}
-              <button onClick={handleRefresh} disabled={refreshing}
-                className="md:hidden bg-blue-600/20 text-blue-400 p-2 rounded-lg text-xs font-medium hover:bg-blue-600/30 flex items-center justify-center">
-                {refreshing ? <span className="animate-spin">⟳</span> : '🔄'}
-              </button>
             </div>
           </div>
         </header>
