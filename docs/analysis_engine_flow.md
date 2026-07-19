@@ -18,6 +18,8 @@ graph TD
         FetchData --> FData[Latest FundamentalMetric]
         FetchData --> SData[Latest SentimentAnalysis]
         FetchData --> DData[Latest Dividends]
+        FetchData --> VData[Latest IntrinsicValuation]
+        FetchData --> QData[Latest QualityMetric]
     end
     
     subgraph Scoring Logic
@@ -25,6 +27,8 @@ graph TD
         FData --> FScore[Calculate Fundamental Score<br>0-100]
         SData --> SScore[Calculate Sentiment Score<br>0-100]
         DData --> DScore[Calculate Dividend Score<br>0-100]
+        VData --> VScore[Calculate Valuation Score<br>0-100]
+        QData --> QScore[Calculate Quality Score<br>0-100]
     end
     
     subgraph Weighting & Signals
@@ -32,17 +36,19 @@ graph TD
         FScore --> Weighting
         SScore --> Weighting
         DScore --> Weighting
+        VScore --> Weighting
+        QScore --> Weighting
         
         Profile[Active Scoring Profile Weights] -.-> Weighting
         
         Weighting[Weighted Average Calculation] --> FinalScore[Overall Score<br>0-100]
         FinalScore --> Thresholds{Check Signal Thresholds}
         
-        Thresholds -->|Score > 80| StrongBuy(Strong Buy)
-        Thresholds -->|Score > 65| Buy(Buy)
+        Thresholds -->|Score > 80| StrongBuy(Strong Accumulate)
+        Thresholds -->|Score > 65| Buy(Accumulate)
         Thresholds -->|Score > 45| Hold(Hold)
-        Thresholds -->|Score > 30| Sell(Sell)
-        Thresholds -->|Score < 30| StrongSell(Strong Sell)
+        Thresholds -->|Score > 30| Sell(Reduce)
+        Thresholds -->|Score < 30| StrongSell(Strong Reduce)
     end
     
     StrongBuy --> Alert{Is Alert Threshold Met?}
@@ -74,10 +80,11 @@ Additionally, there are **sub-weights** within the Technical and Fundamental cat
 
 **Recent Enhancements:**
 - **Sentiment Scoring:** Uses a sigmoid (tanh) curve for smooth variance and applies a confidence penalty if there are too few news articles, avoiding extreme scores from single articles. Evaluates bigrams and 3-word negation windows specific to the Indian market.
-- **Technical Scoring:** 
+- **Technical Scoring:** Uses **Adjusted Close** prices (falling back to Close) so that stock splits and bonuses do not skew the indicators. We calculate 18 full indicators: RSI, MACD, SMA (20/50/200), EMA (12/26), Bollinger Bands, ATR, ADX, Stochastic, OBV, MFI, CCI, Williams %R, Parabolic SAR, and Ichimoku.
   - **MACD:** Scored dynamically based on histogram magnitude relative to current price.
   - **ADX:** Evaluated directionally using +DI vs -DI crossovers rather than absolute trend strength.
   - **OBV:** Evaluated directionally against a 20-period Simple Moving Average of the OBV line.
-- **Fundamental & Valuation Scoring:** P/E Ratio is scored in the Fundamental metrics, while the Valuation dimension is reserved exclusively for Intrinsic Value (Fair Value / Graham Number / Upside Percentage) to prevent double-counting.
+- **Valuation Scoring:** Calculates Intrinsic Value upside percentage based on Fair Value (DCF-lite) and Graham Number. Kept separate from Fundamentals to prevent double-counting.
+- **Quality Scoring:** Evaluates Piotroski F-Score (0–9), Altman Z-Score for bankruptcy risk, Promoter/FII holding trends, Dividend consistency, and Free Cash Flow trend.
 
-When the engine runs, it first calculates each category's score using its internal sub-weights. Then, it multiplies the raw 0-100 score of each category by the top-level percentages to determine the stock's final `OverallScore`.
+When the engine runs, it first calculates each of the 6 category's scores using its internal sub-weights. Then, it multiplies the raw 0-100 score of each category by the top-level percentages to determine the stock's final `OverallScore`.

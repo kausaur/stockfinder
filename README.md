@@ -1,6 +1,6 @@
 # StockFinder — Nifty50 Stock Analyzer
 
-A full-stack, real-time stock analysis platform for India's Nifty 50 blue-chip index. StockFinder automatically harvests live market data from IndianAPI.in and GNews (with Yahoo Finance as fallback), runs it through a configurable scoring engine, and delivers actionable **Buy / Hold / Sell** signals across a web dashboard, a cross-platform mobile app, and push notifications — all powered by **zero hardcoded or mock data**.
+A full-stack, real-time stock analysis platform for India's Nifty 50 blue-chip index. StockFinder automatically harvests live market data from IndianAPI.in, Google News RSS, and Yahoo Finance, runs it through a configurable scoring engine, and delivers actionable **Accumulate / Hold / Reduce** signals across a web dashboard, a cross-platform mobile app, and push notifications — all powered by **zero hardcoded or mock data**.
 
 ---
 
@@ -8,13 +8,13 @@ A full-stack, real-time stock analysis platform for India's Nifty 50 blue-chip i
 
 | | |
 |-|-|
-| 📊 **Live Market Data** | Prices, financials, dividends, metadata, and institutional shareholding — sourced from IndianAPI.in |
+| 📊 **Live Market Data** | Prices, fundamentals, and sentiment — sourced from Yahoo Finance, Google News, and IndianAPI.in |
 | 🧠 **Scoring Engine** | 6 Dimensions: Technical + Fundamental + Valuation (Intrinsic) + Quality (Piotroski/Altman/Shareholding) + Sentiment + Dividends |
 | 🎛️ **Customizable Strategy** | Six preset profiles (Balanced, Growth, Value, Income, Momentum, Quality) or build your own weightings |
 | 📱 **Cross-Platform Mobile** | React Native / Expo app for iOS and Android with offline caching |
-| 🔔 **Push Notifications** | Instant Expo push alerts when a stock triggers a Buy or Strong Buy signal |
+| 🔔 **Push Notifications** | Instant Expo push alerts when a stock triggers an Accumulate or Strong Accumulate signal |
 | 🌐 **Web Dashboard** | Interactive charts, sortable tables, sector heatmaps, and a full admin panel |
-| ⚡ **Auto Refresh** | Background worker re-fetches everything every 24 hours (configurable) |
+| ⚡ **Auto Refresh** | Background worker fetches data daily at 5:30 AM IST, plus smart cold-start triggers |
 | ☁️ **Free Hosting** | Runs on Render (API + Static Site) and Neon (PostgreSQL) — entirely on free tiers |
 
 ---
@@ -27,9 +27,9 @@ The landing page gives you a bird's-eye view of the market:
 
 - **Stats bar** — Total tracked stocks and the number of active trade alerts.
 - **Top Gainers & Losers** — Sorted by daily percentage change.
-- **Recent Alerts** — The latest Buy/Strong Buy signals with per-category score breakdowns.
+- **Recent Alerts** — The latest Accumulate/Strong Accumulate signals with per-category score breakdowns.
 - **Sector Performance** — A horizontal bar chart showing which sectors are leading or lagging.
-- **Data Freshness** — The `🔄 Data: Xh ago` indicator in the header shows when the last refresh ran. Click **Refresh Data** in the sidebar to trigger one immediately.
+- **Data Freshness** — The `🔄 Data: Xh ago` and `as of [date/time]` indicators show when the last refresh ran. Click **Refresh Data** in the sidebar to trigger one immediately.
 
 ### Stocks List
 
@@ -45,12 +45,12 @@ Click any stock to open the full analysis view:
 
 | Section | What you'll see |
 |---------|----------------|
-| **Price Chart** | Interactive candlestick chart with volume overlay and a range selector (1 W → 8 Y) |
-| **Overall Score** | A gauge showing the composite 0–100 score and the resulting signal (Strong Buy → Strong Sell) |
-| **Technical Indicators** | RSI-14, MACD histogram, SMA 50/200 crossover, Bollinger Band position, ADX trend strength |
+| **Price Chart** | Interactive candlestick chart with volume overlay, rendering reliably on first load with date filters |
+| **Overall Score** | A gauge showing the composite 0–100 score and the resulting signal (Strong Accumulate → Strong Reduce) |
+| **Technical Indicators** | 18 full indicators including RSI-14, MACD, SMA 50/200, Bollinger Bands, ADX, Stochastic, OBV, MFI, CCI, Williams %R, Parabolic SAR, and Ichimoku |
 | **Fundamental Ratios** | P/E, P/B, ROE, ROA, Debt-to-Equity, EPS, Revenue & Earnings Growth YoY |
 | **Valuation & Quality** | Fair Value / Graham Number comparisons, Piotroski F-Score, Altman Z-Score, and institutional shareholding patterns (Promoter/FII/DII) |
-| **Sentiment** | Latest news headlines via GNews, a bullish/bearish score, and article count breakdown |
+| **Sentiment** | Latest news headlines via Google News RSS (free) with GNews and Yahoo fallbacks, a bullish/bearish score, and article count breakdown |
 | **Dividends** | Yield, payout ratio, and full dividend history |
 | **Analysis Verdict** | A human-readable reasoning paragraph explaining why each sub-score was assigned |
 
@@ -94,15 +94,16 @@ The React Native (Expo) app mirrors the web experience with native performance a
 
 ```
 ┌──────────────┐    ┌──────────────────┐    ┌──────────────┐
-│  React Web   │◄──►│  .NET 8 API      │◄──►│  PostgreSQL  │
+│  React Web   │◄──►│  .NET 10 API     │◄──►│  PostgreSQL  │
 │  (Vite)      │    │  (EF Core)       │    │  (Neon)      │
 └──────────────┘    │                  │    └──────────────┘
                     │  Background Jobs │
 ┌──────────────┐    │  ┌────────────┐  │    ┌──────────────┐
 │  Expo Mobile │◄──►│  │DataRefresh │──┼──► │ IndianAPI.in │
 │  (RN)        │    │  │Service     │  │    │ Yahoo Finance│
-└──────────────┘    │  └────────────┘  │    │ GNews API    │
+└──────────────┘    │  └────────────┘  │    │ Google News  │
                     │         │        │    └──────────────┘
+
        Push ◄───────│  PushNotification│
                     │  Service         │
                     └──────────────────┘
@@ -112,10 +113,10 @@ The React Native (Expo) app mirrors the web experience with native performance a
 
 | Layer | Technology |
 |-------|-----------|
-| Backend API | .NET 8, Entity Framework Core, PostgreSQL |
-| Web Frontend | React 18, Vite, Recharts, Vanilla CSS |
+| Backend API | .NET 10, Entity Framework Core 10, PostgreSQL |
+| Web Frontend | React 19, Vite, Recharts, Vanilla CSS |
 | Mobile App | React Native, Expo SDK 54, Expo Router |
-| Data Sources | IndianAPI.in (prices, fundamentals, shareholding), Yahoo Finance (fallback), GNews (sentiment) |
+| Data Sources | IndianAPI.in (metadata), Yahoo Finance (prices, fundamentals, sentiment fallback), Google News RSS (sentiment primary) |
 | Hosting | Render (Web Service + Static Site), Neon (managed PostgreSQL) |
 
 ---

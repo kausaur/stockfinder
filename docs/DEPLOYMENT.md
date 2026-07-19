@@ -20,7 +20,7 @@ Before deploying the API, you need a PostgreSQL database.
 ---
 
 ## 2. Deploying the Backend API (Render)
-The backend is a .NET 8 API. We deploy it on Render using a Docker container.
+The backend is a .NET 10 API. We deploy it on Render using a Docker container.
 
 1. Go to your [Render Dashboard](https://dashboard.render.com/) and click **New > Web Service**.
 2. Connect your GitHub repository (`stockfinder`).
@@ -33,7 +33,7 @@ The backend is a .NET 8 API. We deploy it on Render using a Docker container.
    - **Key:** `ConnectionStrings__DefaultConnection` 
      **Value:** *(Your ADO.NET formatted Neon connection string from Step 1)*
    - **Key:** `GNewsApiKey`
-     **Value:** *(Your GNews API key)*
+     **Value:** *(Optional: Your GNews API key. Without this, the app uses free Google News RSS for sentiment)*
 5. Click **Create Web Service**. 
 
 Render will build the Docker container. Upon startup, the API will automatically run Entity Framework migrations to build your database tables and seed initial data.
@@ -61,6 +61,13 @@ The frontend is a React application built with Vite. We deploy this on Render as
 5. Click **Create Static Site**.
 
 Render will install the dependencies, build the React app, and serve the `dist` folder. 
+
+> **⚠️ CRITICAL: SPA Routing:** You MUST add a **Rewrite Rule** in the Render Dashboard under your Static Site settings:
+> - Source: `/*`
+> - Destination: `/index.html`  
+> - Action: **Rewrite** *(NOT Redirect)*
+> 
+> Without this rule, refreshing any page other than the home page will return a `404 Not Found` error.
 
 🎉 **You're all set!** Visit your new UI URL to see your live Stock Finder application!
 

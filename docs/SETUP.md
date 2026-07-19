@@ -8,10 +8,10 @@ Get the Nifty50 Stock Finder running on your machine from scratch.
 
 | Tool | Version | Purpose |
 |------|---------|---------|
-| **.NET SDK** | 8+ | Backend API |
+| **.NET SDK** | 10+ | Backend API |
 | **Node.js** | 18+ (with npm) | Web & Mobile frontends |
 | **Docker Desktop** | Latest | Local PostgreSQL database |
-| **GNews API Key** | Free tier | Sentiment analysis ([gnews.io](https://gnews.io/)) |
+| **GNews API Key** | Optional | Sentiment analysis (without it, the app falls back to free Google News RSS) |
 
 ---
 
@@ -53,7 +53,7 @@ On first startup the `DataRefreshService` will:
 2. Seed the six preset scoring profiles.
 3. Begin fetching 8 years of historical data for all 50 stocks (this takes several minutes on the initial run).
 
-After that, data refreshes automatically every **24 hours** (configurable — see below).
+After that, data refreshes daily at 5:30 AM IST (00:00 UTC).
 
 The API will be available at **http://localhost:5062** and Swagger docs at **http://localhost:5062/swagger**.
 
@@ -97,10 +97,10 @@ All runtime settings live in `src/Nifty50.Api/appsettings.json`:
 
 | Setting | Default | Description |
 |---------|---------|-------------|
-| `DataRefresh:IntervalHours` | `24` | Hours between automatic data refresh cycles |
-| `DataRefresh:SkipIfRecentHours` | `12` | Skip refresh on startup if data was updated within this many hours (prevents wasting API quotas on Render free tier cold starts) |
+| `DataRefresh:IntervalHours` | `24` | Legacy setting. The worker now targets 00:00 UTC (5:30 AM IST) daily. |
+| `DataRefresh:SentimentStaleHours` | `12` | Skip sentiment re-fetch if analyzed within this many hours |
 | `GNews:MaxStocksPerRefresh` | `20` | Max stocks to fetch sentiment for per cycle (GNews free tier = 100 req/day) |
-| `GNewsApiKey` | *(user-secrets)* | Your GNews API key |
+| `GNewsApiKey` | *(user-secrets)* | Optional. Your GNews API key. Without it, Google News RSS is used. |
 
 ---
 
@@ -126,7 +126,7 @@ Render free instances spin down after ~15 minutes of inactivity, causing 30-60s 
    - **Monitoring Interval**: 5 minutes
 3. Save. This also gives you uptime alerts if the service goes down.
 
-> **Note:** The `DataRefreshService` includes a smart skip — even if the instance restarts unexpectedly, it will not waste API quotas re-fetching data that was refreshed within the last 12 hours.
+> **Note:** The `DataRefreshService` includes a smart skip — even if the instance restarts unexpectedly, it will smartly skip data fetching if a refresh already occurred since midnight (00:00 UTC).
 
 ---
 
